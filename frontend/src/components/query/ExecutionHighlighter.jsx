@@ -1,3 +1,5 @@
+import JoinCostChart from "./JoinCostChart";
+
 export default function ExecutionHighlighter({ activeNode, planData }) {
   return (
     <div className="execution-highlighter active">
@@ -34,6 +36,9 @@ export default function ExecutionHighlighter({ activeNode, planData }) {
                     <span className="label">Hash Join:</span>
                     <span className="value mono-code" style={{color: 'var(--function)', padding:0, border:'none'}}>{planData.cost.hashJoinCost.toLocaleString()} ops</span>
                 </div>
+                
+                <JoinCostChart nestedLoopCost={planData.cost.nestedLoopCost} hashJoinCost={planData.cost.hashJoinCost} />
+
                 <div className="stat-item" style={{display:'flex', justifyContent:'space-between', marginTop:'0.8rem', background:'var(--bg-sidebar)', padding:'0.5rem', borderRadius:'4px'}}>
                     <span className="label">Recommendation:</span>
                     <span className="value" style={{color: 'var(--success)', fontWeight:'bold'}}>{planData.cost.recommendation}</span>

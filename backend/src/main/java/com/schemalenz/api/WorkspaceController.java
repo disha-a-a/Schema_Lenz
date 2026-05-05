@@ -28,4 +28,14 @@ public class WorkspaceController {
     public Workspace get(@PathVariable Long id) {
         return workspaceService.getWorkspace(id);
     }
+
+    @PutMapping("/{id}/rename")
+    public Workspace rename(@PathVariable Long id, @RequestBody String newName) {
+        return workspaceService.renameWorkspace(id, newName);
+    }
+
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        workspaceService.deleteWorkspace(id);
+    }
 }

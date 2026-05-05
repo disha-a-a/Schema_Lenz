@@ -30,4 +30,16 @@ public class WorkspaceService {
         return workspaceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Workspace not found"));
     }
+
+    @Transactional
+    public Workspace renameWorkspace(Long id, String newName) {
+        Workspace ws = getWorkspace(id);
+        ws.setName(newName);
+        return workspaceRepository.save(ws);
+    }
+
+    @Transactional
+    public void deleteWorkspace(Long id) {
+        workspaceRepository.deleteById(id);
+    }
 }

@@ -18,7 +18,16 @@ export const getAllWorkspaces = () =>
   api.get('/workspaces');
 
 export const createWorkspace = (name) =>
-  api.post('/workspaces', name);
+  api.post('/workspaces', name, { headers: { 'Content-Type': 'text/plain' } });
 
 export const getWorkspace = (id) =>
   api.get(`/workspaces/${id}`);
+
+export const renameWorkspace = (id, newName) =>
+  api.put(`/workspaces/${id}/rename`, newName, { headers: { 'Content-Type': 'text/plain' } });
+
+export const deleteWorkspace = (id) =>
+  api.delete(`/workspaces/${id}`);
+
+export const saveSchema = (workspaceId, schema) =>
+  api.post(`/workspaces/${workspaceId}/schema`, schema);

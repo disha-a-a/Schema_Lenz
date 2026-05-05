@@ -4,12 +4,16 @@ import DecompositionTree from "./components/normalization/DecompositionTree";
 import ClosureVisualizer from "./components/normalization/ClosureVisualizer";
 import QueryBuilder from "./components/query/QueryBuilder";
 import PlanTree from "./components/query/PlanTree";
+import OptimizationDiff from "./components/query/OptimizationDiff";
 import ExecutionHighlighter from "./components/query/ExecutionHighlighter";
 import WorkspaceDashboard from "./components/workspace/WorkspaceDashboard";
+import IndexBuilder from "./components/index/IndexBuilder";
+import BPlusTreeRenderer from "./components/index/BPlusTreeRenderer";
 
 export default function App() {
   const [normResult, setNormResult] = useState(null);
   const [queryPlan, setQueryPlan] = useState(null);
+  const [indexTree, setIndexTree] = useState(null);
   const [activePlanNode, setActivePlanNode] = useState(null);
   const [tab, setTab] = useState("normalize");
   const [workspace, setWorkspace] = useState(null);
@@ -31,6 +35,12 @@ export default function App() {
             onClick={() => setTab("query")}
           >
             Query Lab
+          </div>
+          <div 
+            className={`nav-tab ${tab === "index" ? "active" : ""}`}
+            onClick={() => setTab("index")}
+          >
+            Indexing
           </div>
           <div 
             className={`nav-tab ${tab === "workspaces" ? "active" : ""}`}
@@ -68,7 +78,7 @@ export default function App() {
       {/* Center - Main Editor */}
       <main className="editor-container">
         <div className="editor-header">
-          {tab === "normalize" ? "normalization_config.json" : "query_analysis.sql"}
+          {tab === "normalize" ? "normalization_config.json" : tab === "query" ? "query_analysis.sql" : "index_builder.config"}
         </div>
         <div className="editor-main">
           {tab === "normalize" && (
@@ -84,27 +94,42 @@ export default function App() {
               )}
             </div>
           )}
-        {tab === "query" && (
-          <div className="editor-layout">
-            <QueryBuilder onPlan={setQueryPlan} />
-            <div style={{marginTop: '2rem'}}>
-              <ExecutionHighlighter activeNode={activePlanNode} planData={queryPlan} />
+          {tab === "query" && (
+            <div className="editor-layout">
+              <QueryBuilder onPlan={setQueryPlan} />
+              <div style={{marginTop: '2rem'}}>
+                <ExecutionHighlighter activeNode={activePlanNode} planData={queryPlan} />
+              </div>
             </div>
-          </div>
-        )}
-        {tab === "workspaces" && (
-          <WorkspaceDashboard onSelectWorkspace={setWorkspace} />
-        )}
-      </div>
-    </main>
+          )}
+          {tab === "index" && (
+            <div className="editor-layout">
+              <IndexBuilder onTreeGenerated={setIndexTree} />
+              {indexTree && (
+                  <div className="cost-analysis" style={{marginTop: '2rem', padding: '1rem', background: 'var(--bg-deep)', borderRadius: '8px', border: '1px solid var(--border)'}}>
+                    <h5 style={{color: 'var(--primary)', marginBottom: '0.5rem'}}>Tree Statistics</h5>
+                    <div style={{display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--text-main)'}}>
+                        <span>Height: {indexTree.height}</span>
+                        <span>Total Nodes: {indexTree.totalNodes}</span>
+                    </div>
+                  </div>
+              )}
+            </div>
+          )}
+          {tab === "workspaces" && (
+            <WorkspaceDashboard onSelectWorkspace={setWorkspace} />
+          )}
+        </div>
+      </main>
 
-    {/* Right - Results & Visualizer */}
-    <section className="results-panel">
-      <div className="panel-header">Output / Visualizer</div>
-      <div className="panel-content">
-        {tab === "normalize" && <DecompositionTree result={normResult} />}
-        {tab === "query" && <PlanTree planData={queryPlan} onNodeHover={setActivePlanNode} />}
-        {!normResult && !queryPlan && (
+      {/* Right - Results & Visualizer */}
+      <section className="results-panel">
+        <div className="panel-header">Output / Visualizer</div>
+        <div className="panel-content">
+          {tab === "normalize" && <DecompositionTree result={normResult} />}
+          {tab === "query" && <OptimizationDiff planData={queryPlan} onNodeHover={setActivePlanNode} />}
+          {tab === "index" && <BPlusTreeRenderer treeData={indexTree} />}
+          {!normResult && !queryPlan && !indexTree && (
             <div className="empty-state">
               <p>Ready to analyze. Run an operation in the editor to see results here.</p>
             </div>
