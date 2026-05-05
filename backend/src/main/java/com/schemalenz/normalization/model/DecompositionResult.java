@@ -7,11 +7,15 @@ public class DecompositionResult {
     private final String currentNF;
     private final List<Set<String>> candidateKeys;
     private final List<Relation> decomposedRelations;
+    private final Set<String> attributes;
+    private final Set<FunctionalDependency> fds;
 
-    public DecompositionResult(String currentNF, List<Set<String>> candidateKeys, List<Relation> decomposedRelations) {
+    public DecompositionResult(String currentNF, List<Set<String>> candidateKeys, List<Relation> decomposedRelations, Set<String> attributes, Set<FunctionalDependency> fds) {
         this.currentNF = currentNF;
         this.candidateKeys = candidateKeys;
         this.decomposedRelations = decomposedRelations;
+        this.attributes = attributes;
+        this.fds = fds;
     }
 
     public String getCurrentNF() {
@@ -24,5 +28,13 @@ public class DecompositionResult {
 
     public List<Relation> getDecomposedRelations() {
         return decomposedRelations;
+    }
+
+    public Set<String> getAttributes() {
+        return attributes;
+    }
+
+    public Set<FunctionalDependency> getFds() {
+        return fds;
     }
 }

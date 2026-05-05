@@ -5,13 +5,13 @@ export default function ClosureVisualizer({ attributes, fds }) {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    let currentClosure = new HashSet(attributes);
+    let currentClosure = new Set(attributes || []);
     let allSteps = [{ closure: new Set(currentClosure), firedFd: null }];
     let changed;
     
     do {
       changed = false;
-      for (const fd of fds) {
+      for (const fd of fds || []) {
         if (isSubset(fd.lhs, currentClosure)) {
           const beforeSize = currentClosure.size;
           fd.rhs.forEach(attr => currentClosure.add(attr));
@@ -71,10 +71,4 @@ export default function ClosureVisualizer({ attributes, fds }) {
       )}
     </div>
   );
-}
-
-class HashSet extends Set {
-    constructor(items) {
-        super(items || []);
-    }
 }

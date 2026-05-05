@@ -26,6 +26,6 @@ public class NormalizationService {
             default     -> List.of(new Relation(attrs, fds));
         };
 
-        return new DecompositionResult(currentNF, keys, decomposed);
+        return new DecompositionResult(currentNF, keys, decomposed, attrs, fds);
     }
 }

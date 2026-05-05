@@ -54,7 +54,7 @@ public class NormalizationEngineTest {
         );
         Relation rel = new Relation(attrs, fds);
         
-        BCNFDecomposer decomposer = new BCNFDecomposer(closureCalc);
+        BCNFDecomposer decomposer = new BCNFDecomposer(closureCalc, checker);
         List<Relation> result = decomposer.decompose(rel);
         
         assertEquals(2, result.size());

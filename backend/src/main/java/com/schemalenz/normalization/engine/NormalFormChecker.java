@@ -50,7 +50,7 @@ public class NormalFormChecker {
     }
 
     private boolean isSuperkey(Set<String> lhs, Set<String> allAttrs, Set<FunctionalDependency> fds) {
-        return closureCalc.calculateClosure(lhs, fds).equals(allAttrs);
+        return closureCalc.calculateClosure(lhs, fds).containsAll(allAttrs);
     }
 
     private boolean isTrivial(FunctionalDependency fd) {

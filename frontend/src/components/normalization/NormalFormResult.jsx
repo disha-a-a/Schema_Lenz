@@ -1,1 +1,0 @@
-export default function NormalFormResult() { return <div>NormalFormResult</div> }
