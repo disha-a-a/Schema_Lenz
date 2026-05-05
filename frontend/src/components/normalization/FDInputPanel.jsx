@@ -95,6 +95,19 @@ export default function FDInputPanel({ onResult }) {
                         onChange={e => updateFD(i, "rhs", e.target.value)} 
                     />
                     <span style={{color: 'var(--text-muted)'}}>,</span>
+                    {fds.length > 1 && (
+                        <span 
+                            onClick={() => {
+                                setFds(fds.filter((_, j) => j !== i));
+                                setUnsaved(true);
+                            }}
+                            style={{color: 'var(--danger)', cursor: 'pointer', marginLeft: '0.5rem', opacity: 0.8, fontSize: '0.8rem'}}
+                            onMouseEnter={e => e.target.style.opacity = 1}
+                            onMouseLeave={e => e.target.style.opacity = 0.8}
+                        >
+                            ✕
+                        </span>
+                    )}
                 </div>
             ))}
             <div 
