@@ -49,8 +49,8 @@ export default function App() {
             Workspaces
           </div>
         </nav>
-        <div className="status-icons">
-          <span style={{color: 'var(--success)'}}>● Online</span>
+        <div className="status-icons" style={{display: 'flex', gap: '1rem', alignItems: 'center'}}>
+          <span className="pulse-indicator" style={{display: 'inline-block', width: '8px', height: '8px', background: 'var(--success)', borderRadius: '50%'}}></span>
         </div>
       </header>
 
@@ -59,13 +59,13 @@ export default function App() {
         <div className="sidebar-section">
           <span className="section-label">Explorer</span>
           <div className="workspace-card active">
-            <span>📁</span> Current Session
+            <span style={{color: 'var(--keyword)'}}>🗂️</span> Current Session
           </div>
           <div className="workspace-card">
-            <span>📄</span> schema_v1.sql
+            <span style={{color: 'var(--function)'}}>📄</span> schema_v1.sql
           </div>
           <div className="workspace-card">
-            <span>📄</span> dependencies.json
+            <span style={{color: 'var(--string)'}}>📄</span> dependencies.json
           </div>
         </div>
         
@@ -77,25 +77,15 @@ export default function App() {
 
       {/* Center - Main Editor */}
       <main className="editor-container">
-        <div className="editor-header">
-          {tab === "normalize" ? "normalization_config.json" : tab === "query" ? "query_analysis.sql" : "index_builder.config"}
-        </div>
-        <div className="editor-main">
+        <div className="editor-main" style={{padding: 0}}>
           {tab === "normalize" && (
-            <div className="editor-layout">
+            <div className="editor-layout" style={{height: '100%'}}>
               <FDInputPanel onResult={setNormResult} />
-              {normResult && (
-                <div style={{marginTop: '2rem'}}>
-                  <ClosureVisualizer 
-                    attributes={normResult.attributes || []} 
-                    fds={normResult.fds || []} 
-                  />
-                </div>
-              )}
             </div>
           )}
           {tab === "query" && (
-            <div className="editor-layout">
+            <div className="editor-layout" style={{padding: '1.5rem'}}>
+              <div className="editor-header" style={{margin: '-1.5rem -1.5rem 1.5rem -1.5rem'}}>query_analysis.sql</div>
               <QueryBuilder onPlan={setQueryPlan} />
               <div style={{marginTop: '2rem'}}>
                 <ExecutionHighlighter activeNode={activePlanNode} planData={queryPlan} />
@@ -103,7 +93,8 @@ export default function App() {
             </div>
           )}
           {tab === "index" && (
-            <div className="editor-layout">
+            <div className="editor-layout" style={{padding: '1.5rem'}}>
+              <div className="editor-header" style={{margin: '-1.5rem -1.5rem 1.5rem -1.5rem'}}>index_builder.config</div>
               <IndexBuilder onTreeGenerated={setIndexTree} />
               {indexTree && (
                   <div className="cost-analysis" style={{marginTop: '2rem', padding: '1rem', background: 'var(--bg-deep)', borderRadius: '8px', border: '1px solid var(--border)'}}>
@@ -117,7 +108,9 @@ export default function App() {
             </div>
           )}
           {tab === "workspaces" && (
-            <WorkspaceDashboard onSelectWorkspace={setWorkspace} />
+            <div style={{padding: '1.5rem', height: '100%'}}>
+               <WorkspaceDashboard onSelectWorkspace={setWorkspace} />
+            </div>
           )}
         </div>
       </main>
@@ -126,10 +119,23 @@ export default function App() {
       <section className="results-panel">
         <div className="panel-header">Output / Visualizer</div>
         <div className="panel-content">
-          {tab === "normalize" && <DecompositionTree result={normResult} />}
+          {tab === "normalize" && (
+              <>
+                  <DecompositionTree result={normResult} />
+                  {normResult && (
+                    <div style={{marginTop: '2rem', borderTop: '1px solid var(--border)', paddingTop: '1rem'}}>
+                      <h3 style={{color: 'var(--function)', marginBottom: '1rem', fontSize: '0.85rem', textTransform: 'uppercase'}}>Closure Analysis</h3>
+                      <ClosureVisualizer 
+                        attributes={normResult.attributes || []} 
+                        fds={normResult.fds || []} 
+                      />
+                    </div>
+                  )}
+              </>
+          )}
           {tab === "query" && <OptimizationDiff planData={queryPlan} onNodeHover={setActivePlanNode} />}
           {tab === "index" && <BPlusTreeRenderer treeData={indexTree} />}
-          {!normResult && !queryPlan && !indexTree && (
+          {!normResult && !queryPlan && !indexTree && tab !== 'workspaces' && (
             <div className="empty-state">
               <p>Ready to analyze. Run an operation in the editor to see results here.</p>
             </div>
@@ -139,10 +145,13 @@ export default function App() {
 
       {/* Status Bar */}
       <footer className="status-bar">
-        <span>UTF-8</span>
-        <span>JSON / SQL</span>
+        <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
+            <span className="pulse-indicator" style={{display: 'inline-block', width: '8px', height: '8px', background: 'var(--success)', borderRadius: '50%'}}></span>
+            <span>Online</span>
+        </div>
         <span>SchemaLenz Core v1.0</span>
-        <span style={{marginLeft: 'auto'}}>Ln 1, Col 1</span>
+        <span style={{marginLeft: 'auto'}}>UTF-8 · JSON / SQL</span>
+        <span>Ln 1, Col 1</span>
       </footer>
     </div>
   );
