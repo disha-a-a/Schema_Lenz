@@ -1,8 +1,14 @@
-export default function PlanTree({ plan }) {
+export default function PlanTree({ plan, onNodeHover }) {
   if (!plan) return null;
 
   const renderNode = (node, depth = 0) => (
-    <div key={node.name + depth} style={{ marginLeft: depth * 24 }} className="plan-node">
+    <div 
+        key={node.name + depth} 
+        style={{ marginLeft: depth * 24 }} 
+        className="plan-node"
+        onMouseEnter={() => onNodeHover?.(node)}
+        onMouseLeave={() => onNodeHover?.(null)}
+    >
       <div className="node-content">
         <span className="node-icon">⚡</span>
         <span className="node-label">{node.name}</span>

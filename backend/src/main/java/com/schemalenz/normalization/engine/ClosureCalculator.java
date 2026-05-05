@@ -1,7 +1,9 @@
 package com.schemalenz.normalization.engine;
 
 import com.schemalenz.normalization.model.FunctionalDependency;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ClosureCalculator {
@@ -14,9 +16,16 @@ public class ClosureCalculator {
      * @return The closure of the attributes (X+).
      */
     public Set<String> calculateClosure(Set<String> attributes, Set<FunctionalDependency> fds) {
+        List<Set<String>> steps = calculateClosureSteps(attributes, fds);
+        return steps.get(steps.size() - 1);
+    }
+
+    public List<Set<String>> calculateClosureSteps(Set<String> attributes, Set<FunctionalDependency> fds) {
+        List<Set<String>> steps = new ArrayList<>();
         Set<String> closure = new HashSet<>(attributes);
-        boolean changed;
+        steps.add(new HashSet<>(closure));
         
+        boolean changed;
         do {
             changed = false;
             for (FunctionalDependency fd : fds) {
@@ -27,8 +36,11 @@ public class ClosureCalculator {
                     }
                 }
             }
+            if (changed) {
+                steps.add(new HashSet<>(closure));
+            }
         } while (changed);
         
-        return closure;
+        return steps;
     }
 }
