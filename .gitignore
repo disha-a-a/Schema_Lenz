@@ -1,0 +1,35 @@
+# Maven
+**/target/
+**/*.jar
+**/*.war
+**/*.ear
+
+# Node / React
+node_modules/
+dist/
+.eslintcache
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+backend/src/main/resources/application-local.properties
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -1,0 +1,1 @@
+export default function DecompositionTree() { return <div>DecompositionTree</div> }

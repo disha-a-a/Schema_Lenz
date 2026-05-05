@@ -1,0 +1,1 @@
+export default function WorkspaceDashboard() { return <div>WorkspaceDashboard</div> }
