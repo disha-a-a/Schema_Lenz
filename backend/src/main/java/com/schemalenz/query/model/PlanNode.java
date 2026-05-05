@@ -11,6 +11,8 @@ public abstract class PlanNode {
     private String name;
     private List<PlanNode> children = new ArrayList<>();
     private double cost;
+    private String relationalAlgebra;
+    private String details;
 
     protected PlanNode(String name) {
         this.name = name;

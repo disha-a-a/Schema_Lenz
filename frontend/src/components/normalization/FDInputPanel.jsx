@@ -37,35 +37,42 @@ export default function FDInputPanel({ onResult }) {
   return (
     <div className="fd-panel">
       <div className="input-group">
-        <label>Attributes</label>
+        <label className="section-label">Attributes</label>
         <input
+            className="mono-code"
             placeholder="e.g. A,B,C,D"
             value={attrs}
             onChange={e => setAttrs(e.target.value)}
         />
       </div>
       
-      <div className="fds-list">
-        <label>Functional Dependencies</label>
+      <div className="fds-list" style={{marginTop: '1.5rem'}}>
+        <label className="section-label">Functional Dependencies</label>
         {fds.map((fd, i) => (
             <div key={i} className="fd-row">
             <input placeholder="LHS: A,B" value={fd.lhs}
                 onChange={e => updateFD(i, "lhs", e.target.value)} />
-            <span>→</span>
+            <span style={{color: 'var(--primary)', textAlign: 'center'}}>→</span>
             <input placeholder="RHS: C,D" value={fd.rhs}
                 onChange={e => updateFD(i, "rhs", e.target.value)} />
             </div>
         ))}
       </div>
       
-      <div className="actions">
-        <button className="secondary" onClick={addFD}>+ Add FD</button>
-        <select value={targetNF} onChange={e => setTargetNF(e.target.value)}>
+      <div className="actions" style={{marginTop: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center'}}>
+        <button className="secondary-btn" onClick={addFD} style={{background: 'transparent', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '0.4rem 0.8rem', borderRadius: '4px', cursor: 'pointer'}}>
+            + Add FD
+        </button>
+        <select 
+            value={targetNF} 
+            onChange={e => setTargetNF(e.target.value)}
+            style={{background: 'var(--bg-sidebar)', color: 'var(--text-bright)', border: '1px solid var(--border)', padding: '0.4rem', borderRadius: '4px'}}
+        >
             <option value="BCNF">BCNF</option>
             <option value="3NF">3NF</option>
         </select>
-        <button className="primary" onClick={submit} disabled={loading}>
-            {loading ? "Analyzing..." : "Normalize"}
+        <button className="primary-btn" onClick={submit} disabled={loading}>
+            {loading ? "Analyzing..." : "Execute Normalization"}
         </button>
       </div>
     </div>

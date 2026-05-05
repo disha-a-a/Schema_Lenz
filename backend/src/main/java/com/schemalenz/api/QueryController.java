@@ -1,6 +1,7 @@
 package com.schemalenz.api;
 
 import com.schemalenz.query.engine.SQLParser;
+import com.schemalenz.query.engine.QueryOptimizerService;
 import com.schemalenz.query.model.PlanNode;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -12,14 +13,62 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class QueryController {
     private final SQLParser sqlParser = new SQLParser();
+    private final QueryOptimizerService optimizerService;
 
     @PostMapping("/explain")
     public PlanNode explain(@RequestBody QueryRequest request) throws Exception {
-        return sqlParser.parse(request.getSql());
+        PlanNode plan = sqlParser.parse(request.getSql());
+        optimizerService.annotateRelationalAlgebra(plan);
+        return plan;
+    }
+
+    @PostMapping("/optimize")
+    public OptimizationResponse optimize(@RequestBody QueryRequest request) throws Exception {
+        PlanNode original = sqlParser.parse(request.getSql());
+        optimizerService.annotateRelationalAlgebra(original);
+        
+        PlanNode optimized = optimizerService.optimizePlan(original);
+        
+        OptimizationResponse response = new OptimizationResponse();
+        response.setOriginalPlan(original);
+        response.setOptimizedPlan(optimized);
+        return response;
+    }
+    
+    @PostMapping("/cost")
+    public CostResponse simulateCost(@RequestBody CostRequest request) {
+        double n = request.getLeftRows();
+        double m = request.getRightRows();
+        
+        CostResponse response = new CostResponse();
+        response.setNestedLoopCost(n * m);
+        response.setHashJoinCost(n + m);
+        response.setRecommendation(response.getHashJoinCost() < response.getNestedLoopCost() ? "Hash Join" : "Nested Loop Join");
+        
+        return response;
     }
 
     @Data
     public static class QueryRequest {
         private String sql;
+    }
+    
+    @Data
+    public static class OptimizationResponse {
+        private PlanNode originalPlan;
+        private PlanNode optimizedPlan;
+    }
+    
+    @Data
+    public static class CostRequest {
+        private double leftRows;
+        private double rightRows;
+    }
+    
+    @Data
+    public static class CostResponse {
+        private double nestedLoopCost;
+        private double hashJoinCost;
+        private String recommendation;
     }
 }

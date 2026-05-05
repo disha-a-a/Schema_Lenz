@@ -8,6 +8,12 @@ export const normalize = (attrs, fds, targetNF) =>
 export const analyzeQuery = (sql, workspaceId) =>
   api.post('/query/explain', { sql, workspaceId });
 
+export const optimizeQuery = (sql, workspaceId) =>
+  api.post('/query/optimize', { sql, workspaceId });
+
+export const simulateCost = (leftRows, rightRows) =>
+  api.post('/query/cost', { leftRows, rightRows });
+
 export const getAllWorkspaces = () =>
   api.get('/workspaces');
 
