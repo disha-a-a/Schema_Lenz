@@ -1,0 +1,52 @@
+/* DemoControls.css – Premium playback control styling */
+
+/* Container: glassmorphic panel */
+.demo-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 16px;
+  background: rgba(10, 10, 12, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Button base */
+.control-btn {
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e4e1e9;
+  background: linear-gradient(135deg, #3a3a5c, #212141);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-btn:hover {
+  background: linear-gradient(135deg, #4c4c80, #2a2a4f);
+  box-shadow: 0 0 8px rgba(100, 149, 237, 0.4);
+}
+
+.control-btn:active {
+  transform: scale(0.96);
+}
+
+/* Icon-like emoji scaling */
+.control-btn::first-letter {
+  font-size: 1.1rem;
+}
+
+/* Disabled state (if needed) */
+.control-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

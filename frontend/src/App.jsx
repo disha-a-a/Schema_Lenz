@@ -1,15 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import FDInputPanel from "./components/normalization/FDInputPanel";
-import DecompositionTree from "./components/normalization/DecompositionTree";
-import ClosureVisualizer from "./components/normalization/ClosureVisualizer";
+import DBBrowser from "./components/normalization/DBBrowser";
+import AttributeGrid from "./components/normalization/AttributeGrid";
 import QueryBuilder from "./components/query/QueryBuilder";
 import OptimizationDiff from "./components/query/OptimizationDiff";
+import FDArrowOverlay from "./components/normalization/FDArrowOverlay";
+import DemoControls from "./components/normalization/DemoControls.jsx";
 import ExecutionHighlighter from "./components/query/ExecutionHighlighter";
 import IndexBuilder from "./components/index/IndexBuilder";
 import BPlusTreeRenderer from "./components/index/BPlusTreeRenderer";
 import WorkspaceDashboard from "./components/workspace/WorkspaceDashboard";
+import DecompositionTree from "./components/normalization/DecompositionTree";
+import * as SocialDB from "./data/socialDB";
+import * as UniversityDB from "./data/universityDB";
+import { Database, Table as TableIcon, Layers, Zap } from "lucide-react";
+
+const DATABASES = {
+  "Social Media": [
+    { name: "User", data: SocialDB.Users },
+    { name: "Post", data: SocialDB.Posts },
+    { name: "Comment", data: SocialDB.Comments },
+    { name: "Follow", data: SocialDB.Follows },
+    { name: "Hashtag", data: SocialDB.Hashtags },
+    { name: "PostTag", data: SocialDB.PostTags },
+    { name: "Social_Universal_Flat_File", data: SocialDB.Social_Universal_Flat_File },
+  ],
+  "University": [
+    { name: "Students", data: UniversityDB.Students },
+    { name: "Courses", data: UniversityDB.Courses },
+    { name: "Enrollments", data: UniversityDB.Enrollments },
+  ]
+};
 
 const TABS = [
+  { id: "relations", label: "Relations" },
   { id: "normalize", label: "Explorer" },
   { id: "query",     label: "Refactor" },
   { id: "index",     label: "Verify"   },
@@ -17,6 +41,7 @@ const TABS = [
 ];
 
 const FILE_TAB = {
+  relations:  { icon: "account_tree", name: "social_network.db",          tag: "SCHEMA"  },
   normalize:  { icon: "data_object",  name: "normalization_config.json", tag: "EDITING" },
   query:      { icon: "database",     name: "query_analysis.sql",        tag: "SQL"     },
   index:      { icon: "account_tree", name: "index_builder.config",      tag: "CONFIG"  },
@@ -28,10 +53,72 @@ export default function App() {
   const [queryPlan,      setQueryPlan]      = useState(null);
   const [indexTree,      setIndexTree]      = useState(null);
   const [activePlanNode, setActivePlanNode] = useState(null);
-  const [tab,            setTab]            = useState("normalize");
+  const [tab,            setTab]            = useState("relations");
   const [workspace,      setWorkspace]      = useState(null);
+  const [currentDB,      setCurrentDB]      = useState("Social Media");
+  const [demoPhase,      setDemoPhase]      = useState("browse"); 
   const [targetNF,       setTargetNF]       = useState("3NF");
+  const [activeTable,    setActiveTable]    = useState(null); 
+  // Utility for button actions
+  // Playback control state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [stepIndex, setStepIndex] = useState(0);
+  const handlePlayPause = () => {
+    setIsPlaying(prev => !prev);
+  };
+  const handleReplay = () => {
+    setStepIndex(0);
+    setIsPlaying(false);
+  };
+  const handleNextStep = () => {
+    setStepIndex(prev => prev + 1);
+  };
+  const handlePrevStep = () => {
+    setStepIndex(prev => (prev > 0 ? prev - 1 : 0));
+  };
+  const handleButtonClick = (label) => {
+    console.log(`Button clicked: ${label}`);
+    if (label === 'NEW_SCHEMA') {
+      setDemoPhase("browse");
+      setNormResult(null);
+      setStepIndex(0);
+      setIsPlaying(false);
+    } else {
+      alert(`Feature coming soon: ${label}`);
+    }
+  };
+
+  useEffect(() => {
+    let timer;
+    if (isPlaying) {
+      timer = setInterval(() => {
+        setStepIndex(prev => prev + 1);
+      }, 1500);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying]);
+
   const [sideItem,       setSideItem]       = useState("Files");
+  const [panelHeight,    setPanelHeight]    = useState(300);
+  const [isResizing,     setIsResizing]     = useState(false);
+
+  const startResizing = () => setIsResizing(true);
+  const stopResizing  = () => setIsResizing(false);
+  const resize        = (e) => {
+    if (isResizing) {
+      const newHeight = window.innerHeight - e.clientY - 24; // 24 is status bar height
+      if (newHeight > 100 && newHeight < 600) setPanelHeight(newHeight);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("mousemove", resize);
+    window.addEventListener("mouseup", stopResizing);
+    return () => {
+      window.removeEventListener("mousemove", resize);
+      window.removeEventListener("mouseup", stopResizing);
+    };
+  }, [isResizing]);
 
   const ft = FILE_TAB[tab];
 
@@ -82,10 +169,14 @@ export default function App() {
             }} onFocus={e => e.target.style.borderColor = "#63f7ff"}
               onBlur={e => e.target.style.borderColor = "#3a494a"} />
           </div>
-          <button style={{ background: "none", border: "none", cursor: "pointer", color: "#b9caca" }}>
+          <button 
+            onClick={() => handleButtonClick('Settings')}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#b9caca" }}>
             <span className="material-symbols-outlined">settings</span>
           </button>
-          <button style={{ background: "none", border: "none", cursor: "pointer", color: "#b9caca" }}>
+          <button 
+            onClick={() => handleButtonClick('Terminal')}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#b9caca" }}>
             <span className="material-symbols-outlined">terminal</span>
           </button>
           <div style={{
@@ -111,13 +202,15 @@ export default function App() {
               </span>
               <span style={{ fontSize: "10px", color: "#849495", opacity: 0.7 }}>v1.0-stable</span>
             </div>
-            <button style={{
-              width: "100%", background: "#ff4b89", color: "#590026",
-              border: "none", padding: "8px", cursor: "pointer",
-              fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-              textTransform: "uppercase", transition: "filter 0.15s",
-            }} onMouseEnter={e => e.target.style.filter = "brightness(1.15)"}
-              onMouseLeave={e => e.target.style.filter = "brightness(1)"}>
+            <button
+              onClick={() => handleButtonClick('NEW_SCHEMA')}
+              style={{
+                width: "100%", background: "#ff4b89", color: "#590026",
+                border: "none", padding: "8px", cursor: "pointer",
+                fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
+                textTransform: "uppercase", transition: "filter 0.15s",
+              }} onMouseEnter={e => e.target.style.filter = "brightness(1.15)"}
+                onMouseLeave={e => e.target.style.filter = "brightness(1)"}>
               NEW_SCHEMA
             </button>
           </div>
@@ -134,7 +227,12 @@ export default function App() {
               { id: "Logs",      icon: "terminal"     },
             ].map(item => (
               <div key={item.id} style={{ padding: "0 8px" }}>
-                <div onClick={() => { setSideItem(item.id); if (item.id === "Files") setTab("normalize"); }}
+                <div onClick={() => { 
+                  setSideItem(item.id); 
+                  if (item.id === "Files") setTab("normalize"); 
+                  if (item.id === "Relations") setTab("relations");
+                  handleButtonClick(item.id);
+                }}
                   style={{
                     display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px",
                     cursor: "pointer", transition: "all 0.15s",
@@ -235,7 +333,94 @@ export default function App() {
 
           {/* main editor content */}
           <div style={{ flex: 1, overflow: "hidden" }}>
-            {tab === "normalize" && <FDInputPanel onResult={setNormResult} externalTargetNF={targetNF} />}
+            {tab === "relations" && (
+              <DBBrowser
+                onSelectTable={setActiveTable}
+                onNormalize={() => {
+                  setTab("normalize");
+                  setDemoPhase("fd-input");
+                }}
+              />
+            )}
+            {tab === "normalize" && (
+              <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: "24px", overflowY: "auto" }}>
+                {/* ── STEP 1: DB SELECTION ── */}
+                <div style={{ marginBottom: "32px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#849495", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>
+                    <Database size={14} />
+                    Step 1: Select Database
+                  </div>
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    {Object.keys(DATABASES).map(dbName => (
+                      <button 
+                        key={dbName}
+                        onClick={() => {
+                          setCurrentDB(dbName);
+                          setActiveTable(DATABASES[dbName][0]);
+                          setDemoPhase("fd-input");
+                        }}
+                        style={{
+                          padding: "10px 20px", borderRadius: "12px", border: "1px solid",
+                          fontFamily: "Space Grotesk", fontSize: "13px", fontWeight: 600, cursor: "pointer",
+                          transition: "all 0.2s",
+                          background: currentDB === dbName ? "rgba(99, 247, 255, 0.1)" : "#1b1b20",
+                          color: currentDB === dbName ? "#63f7ff" : "#849495",
+                          borderColor: currentDB === dbName ? "#63f7ff" : "#3a494a",
+                          boxShadow: currentDB === dbName ? "0 4px 12px rgba(99, 247, 255, 0.15)" : "none"
+                        }}
+                      >
+                        {dbName}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── STEP 2: RELATION SELECTION ── */}
+                <div style={{ marginBottom: "32px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#849495", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>
+                    <TableIcon size={14} />
+                    Step 2: Select Relation
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                    {DATABASES[currentDB].map(tbl => (
+                      <button 
+                        key={tbl.name}
+                        onClick={() => {
+                          setActiveTable(tbl);
+                          setDemoPhase("fd-input");
+                        }}
+                        style={{
+                          padding: "8px 16px", borderRadius: "8px", border: "1px solid",
+                          fontFamily: "Space Grotesk", fontSize: "12px", fontWeight: 600, cursor: "pointer",
+                          transition: "all 0.15s",
+                          background: activeTable?.name === tbl.name ? "#2a292f" : "transparent",
+                          color: activeTable?.name === tbl.name ? "#63f7ff" : "#b9caca",
+                          borderColor: activeTable?.name === tbl.name ? "#63f7ff" : "#3a494a",
+                        }}
+                      >
+                        {tbl.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* ── STEP 3: FD CONFIGURATION ── */}
+                {activeTable && (
+                  <div style={{ marginBottom: "32px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#849495", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>
+                      <Zap size={14} />
+                      Step 3: Define Dependencies
+                    </div>
+                    <FDInputPanel 
+                      onResult={setNormResult} 
+                      availableAttributes={activeTable ? Object.keys(activeTable.data[0] || {}) : []}
+                      targetNF={targetNF}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
             {tab === "query" && (
               <div style={{ padding: "24px", height: "100%", overflowY: "auto" }}>
                 <QueryBuilder onPlan={setQueryPlan} />
@@ -262,81 +447,81 @@ export default function App() {
               </div>
             )}
           </div>
+
+          {/* ── BOTTOM OUTPUT PANEL ── */}
+          <div style={{ 
+            height: `${panelHeight}px`, 
+            borderTop: "1px solid #3a494a", 
+            background: "#0e0e13", 
+            display: "flex", 
+            flexDirection: "column", 
+            position: "relative",
+            flexShrink: 0
+          }}>
+            {/* Resize Handle */}
+            <div 
+              onMouseDown={startResizing}
+              style={{
+                position: "absolute", top: "-3px", left: 0, right: 0, height: "6px",
+                cursor: "ns-resize", zIndex: 10, background: isResizing ? "#63f7ff" : "transparent"
+              }}
+            />
+
+            {/* panel header */}
+            <div style={{ height: "32px", background: "#1f1f25", borderBottom: "1px solid #3a494a", display: "flex", alignItems: "center", padding: "0 16px", flexShrink: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+                <span style={{ fontFamily: "Space Grotesk", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#63f7ff" }}>
+                  Output / Visualizer
+                </span>
+                <div style={{ display: "flex", gap: "12px", borderLeft: "1px solid #3a494a", paddingLeft: "16px" }}>
+                  {["TERMINAL", "OUTPUT", "DEBUG", "PROBLEMS"].map(p => (
+                    <span key={p} style={{ fontSize: "10px", color: p === "OUTPUT" ? "#e4e1e9" : "#849495", cursor: "pointer", fontWeight: 700 }}>{p}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* terminal / results content */}
+            <div style={{ flex: 1, padding: "16px", overflowY: "auto", display: "flex", gap: "20px" }}>
+              <div style={{
+                flex: 1, background: "#000", border: "1px solid #3a494a", padding: "16px",
+                fontFamily: "Fira Code, monospace", fontSize: "12px",
+                lineHeight: 1.7, position: "relative",
+              }}>
+                {/* traffic light dots */}
+                <div style={{ position: "absolute", top: "8px", right: "8px", display: "flex", gap: "4px" }}>
+                  {["#ffb4ab", "#8fdb00", "#63f7ff"].map((c, i) => (
+                    <div key={i} style={{ width: "8px", height: "8px", borderRadius: "50%", background: c }} />
+                  ))}
+                </div>
+
+                <p style={{ color: "#849495", marginBottom: "4px" }}>[$] sl-engine analyze --target={targetNF}</p>
+                <p style={{ color: "#8fdb00", marginBottom: "12px" }}>SchemaLenz v1.0 [Ready]</p>
+
+                {!normResult && (
+                  <p style={{ color: "#b9caca", opacity: 0.8 }}>&gt; Select a relation and click 'Execute' to begin visualization.</p>
+                )}
+
+                {tab === "normalize" && normResult && (
+                  <div style={{ display: "flex", gap: "24px" }}>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ color: "#63f7ff" }}>&gt; Normalization Step: {stepIndex}</p>
+                      <DecompositionTree result={normResult} stepIndex={stepIndex} isPlaying={isPlaying} />
+                    </div>
+                    <div style={{ width: "300px", borderLeft: "1px solid #3a494a", paddingLeft: "24px" }}>
+                      <p style={{ color: "#00dce5", fontFamily: "Space Grotesk", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Closure Analysis</p>
+                      <AttributeGrid attributes={normResult.attributes || []} fds={normResult.fds || []} />
+                    </div>
+                  </div>
+                )}
+                {tab === "query"  && <OptimizationDiff planData={queryPlan} onNodeHover={setActivePlanNode} />}
+                {tab === "index"  && <BPlusTreeRenderer treeData={indexTree} />}
+              </div>
+            </div>
+          </div>
         </main>
 
-        {/* ── RIGHT PANEL ── */}
-        <aside style={{ width: "320px", flexShrink: 0, background: "#0e0e13", display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-          {/* panel header */}
-          <div style={{ height: "40px", background: "#1f1f25", borderBottom: "1px solid #3a494a", display: "flex", alignItems: "center", padding: "0 16px", flexShrink: 0 }}>
-            <span style={{ fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#e4e1e9" }}>
-              Output / Visualizer
-            </span>
-          </div>
-
-          {/* terminal / results */}
-          <div style={{ flex: 1, padding: "16px", overflowY: "auto" }}>
-            <div style={{
-              background: "#000", border: "1px solid #3a494a", padding: "16px",
-              minHeight: "200px", fontFamily: "Fira Code, monospace", fontSize: "12px",
-              lineHeight: 1.7, position: "relative",
-            }}>
-              {/* traffic light dots */}
-              <div style={{ position: "absolute", top: "8px", right: "8px", display: "flex", gap: "4px" }}>
-                {["#ffb4ab", "#8fdb00", "#63f7ff"].map((c, i) => (
-                  <div key={i} style={{ width: "8px", height: "8px", borderRadius: "50%", background: c }} />
-                ))}
-              </div>
-
-              <p style={{ color: "#849495", marginBottom: "8px" }}>[$] sl-engine --version</p>
-              <p style={{ color: "#8fdb00", marginBottom: "16px" }}>Schema Lenz v1.0-stable [64-bit]</p>
-              <p style={{ color: "#00dce5", marginBottom: "8px" }}>&gt; Initializing relational analyzer...</p>
-
-              {!hasResult && (
-                <>
-                  <p style={{ color: "#b9caca", opacity: 0.8 }}>&gt; Ready to analyze. Run an operation in the editor to see results here.</p>
-                  <p style={{ color: "#849495", opacity: 0.5, marginTop: "32px", fontStyle: "italic" }}>// Normalization tree visualization will appear here upon execution.</p>
-                </>
-              )}
-
-              {tab === "normalize" && normResult && (
-                <div style={{ marginTop: "8px" }}>
-                  <p style={{ color: "#8fdb00" }}>&gt; Analysis complete.</p>
-                  <p style={{ color: "#63f7ff", marginTop: "4px" }}>Detected: <strong>{normResult.currentNF}</strong></p>
-                  <DecompositionTree result={normResult} />
-                  <div style={{ marginTop: "16px", borderTop: "1px solid #3a494a", paddingTop: "16px" }}>
-                    <p style={{ color: "#00dce5", fontFamily: "Space Grotesk", fontSize: "11px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "8px" }}>Closure Analysis</p>
-                    <ClosureVisualizer attributes={normResult.attributes || []} fds={normResult.fds || []} />
-                  </div>
-                </div>
-              )}
-              {tab === "query"  && <OptimizationDiff planData={queryPlan} onNodeHover={setActivePlanNode} />}
-              {tab === "index"  && <BPlusTreeRenderer treeData={indexTree} />}
-            </div>
-          </div>
-
-          {/* dependency health inspector */}
-          <div style={{ height: "192px", borderTop: "1px solid #3a494a", background: "#1b1b20", padding: "16px", flexShrink: 0 }}>
-            <h4 style={{ fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#b9caca", marginBottom: "12px" }}>
-              Dependency Health
-            </h4>
-
-            <HealthBar label="Redundancy" pct={redundancyPct} color="#ffb4ab" valueLabel={`${redundancyPct === 42 ? "High" : redundancyPct === 22 ? "Medium" : "Low"} (${redundancyPct}%)`} />
-            <HealthBar label="Transitive Closure" pct={closurePct} color="#63f7ff" valueLabel="Stable" />
-
-            <div style={{ marginTop: "12px" }}>
-              <button style={{
-                width: "100%", border: "1px solid #849495", background: "transparent",
-                padding: "6px", cursor: "pointer",
-                fontFamily: "Space Grotesk", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                color: "#b9caca", transition: "all 0.15s",
-              }} onMouseEnter={e => e.currentTarget.style.background = "#35343a"}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                GENERATE REPORT
-              </button>
-            </div>
-          </div>
-        </aside>
       </div>
 
       {/* ── STATUS BAR ── */}

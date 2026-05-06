@@ -1,5 +1,6 @@
 package com.schemalenz.normalization.engine;
 
+import com.schemalenz.normalization.model.DecompositionTreeNode;
 import com.schemalenz.normalization.model.FunctionalDependency;
 import com.schemalenz.normalization.model.Relation;
 import java.util.*;
@@ -51,6 +52,16 @@ public class ThreeNFSynthesizer {
 
         // Step 4: Remove redundant relations (subset of another)
         return removeRedundant(relations);
+    }
+
+    public DecompositionTreeNode synthesizeToTree(Set<String> allAttrs, Set<FunctionalDependency> fds) {
+        DecompositionTreeNode root = new DecompositionTreeNode("R0", allAttrs);
+        List<Relation> relations = synthesize(allAttrs, fds);
+        int i = 1;
+        for (Relation rel : relations) {
+            root.getChildren().add(new DecompositionTreeNode("R" + i++, rel.getAttributes()));
+        }
+        return root;
     }
 
     private List<Relation> removeRedundant(List<Relation> relations) {

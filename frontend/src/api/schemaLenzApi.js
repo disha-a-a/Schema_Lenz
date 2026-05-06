@@ -5,6 +5,11 @@ const api = axios.create({ baseURL: 'http://localhost:8080/api' });
 export const normalize = (attrs, fds, targetNF) =>
   api.post('/normalization/normalize', { attributes: attrs, fds, targetNF });
 
+export const calculateClosureSteps = async (attrs, fds) => {
+  const response = await api.post('/normalization/closure', { attributes: attrs, fds });
+  return response.data;
+};
+
 export const analyzeQuery = (sql, workspaceId) =>
   api.post('/query/explain', { sql, workspaceId });
 

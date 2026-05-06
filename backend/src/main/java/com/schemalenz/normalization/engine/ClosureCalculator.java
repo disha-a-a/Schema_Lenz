@@ -1,5 +1,6 @@
 package com.schemalenz.normalization.engine;
 
+import com.schemalenz.normalization.model.ClosureStep;
 import com.schemalenz.normalization.model.FunctionalDependency;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,6 +39,31 @@ public class ClosureCalculator {
             }
             if (changed) {
                 steps.add(new HashSet<>(closure));
+            }
+        } while (changed);
+        
+        return steps;
+    }
+
+    public List<ClosureStep> calculateAnimationSteps(Set<String> attributes, Set<FunctionalDependency> fds) {
+        List<ClosureStep> steps = new ArrayList<>();
+        Set<String> closure = new HashSet<>(attributes);
+        
+        boolean changed;
+        do {
+            changed = false;
+            for (FunctionalDependency fd : fds) {
+                if (closure.containsAll(fd.getLhs())) {
+                    if (!closure.containsAll(fd.getRhs())) {
+                        Set<String> newAttrs = new HashSet<>(fd.getRhs());
+                        newAttrs.removeAll(closure);
+                        if (!newAttrs.isEmpty()) {
+                            closure.addAll(newAttrs);
+                            changed = true;
+                            steps.add(new ClosureStep(new HashSet<>(fd.getLhs()), newAttrs));
+                        }
+                    }
+                }
             }
         } while (changed);
         
