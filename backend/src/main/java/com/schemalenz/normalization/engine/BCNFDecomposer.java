@@ -15,60 +15,22 @@ public class BCNFDecomposer {
         this.checker = checker;
     }
 
-    public List<Relation> decompose(Relation relation) {
-        List<Relation> result = new ArrayList<>();
-        decomposeRecursive(relation, result);
-        return result;
-    }
-
-    private void decomposeRecursive(Relation rel, List<Relation> result) {
+    public DecompositionTreeNode decompose(Relation rel, String id) {
+        DecompositionTreeNode node = new DecompositionTreeNode(id, rel.getAttributes());
         CandidateKeyFinder keyFinder = new CandidateKeyFinder(closureCalc);
-        List<Set<String>> candidateKeys = keyFinder.findCandidateKeys(rel.getAttributes(), rel.getFds());
+        List<Set<String>> keys = keyFinder.findCandidateKeys(rel.getAttributes(), rel.getFds());
+        node.setCandidateKeys(keys);
+        node.setNormalForm(checker.detectNormalForm(rel.getAttributes(), rel.getFds(), keys));
+        node.setNfStage("BCNF");
 
-        List<FunctionalDependency> violations =
-            checker.findBCNFViolations(rel.getAttributes(), rel.getFds());
-
-        if (violations.isEmpty()) {
-            result.add(rel);
-            return;
-        }
-
-        // Pick first violation: X -> Y where X is not a superkey
-        FunctionalDependency violatingFD = violations.get(0);
-        Set<String> lhs = violatingFD.getLhs();
-        Set<String> lhsClosure = closureCalc.calculateClosure(lhs, rel.getFds());
-
-        // R1 = lhsClosure
-        Set<String> r1Attrs = new HashSet<>(lhsClosure);
-        Set<FunctionalDependency> r1Fds = projectFDs(r1Attrs, rel.getFds());
-
-        // R2 = (R - lhsClosure) + lhs
-        Set<String> r2Attrs = new HashSet<>(rel.getAttributes());
-        Set<String> toRemove = new HashSet<>(lhsClosure);
-        toRemove.removeAll(lhs);
-        r2Attrs.removeAll(toRemove);
-        Set<FunctionalDependency> r2Fds = projectFDs(r2Attrs, rel.getFds());
-
-        decomposeRecursive(new Relation(r1Attrs, r1Fds), result);
-        decomposeRecursive(new Relation(r2Attrs, r2Fds), result);
-    }
-
-    public DecompositionTreeNode decomposeToTree(Relation rel, String idPrefix) {
-        DecompositionTreeNode node = new DecompositionTreeNode(idPrefix, rel.getAttributes());
-
-        CandidateKeyFinder keyFinder = new CandidateKeyFinder(closureCalc);
-        List<Set<String>> candidateKeys = keyFinder.findCandidateKeys(rel.getAttributes(), rel.getFds());
-
-        List<FunctionalDependency> violations =
-            checker.findBCNFViolations(rel.getAttributes(), rel.getFds());
-
+        List<FunctionalDependency> violations = checker.findBCNFViolations(rel.getAttributes(), rel.getFds());
         if (violations.isEmpty()) {
             return node;
         }
 
         FunctionalDependency violatingFD = violations.get(0);
         node.setViolatingFD(violatingFD);
-        node.setReason("BCNF");
+        node.setReason("BCNF Violation: " + violatingFD.getLhs() + " -> " + violatingFD.getRhs());
 
         Set<String> lhs = violatingFD.getLhs();
         Set<String> lhsClosure = closureCalc.calculateClosure(lhs, rel.getFds());
@@ -82,8 +44,8 @@ public class BCNFDecomposer {
         r2Attrs.removeAll(toRemove);
         Set<FunctionalDependency> r2Fds = projectFDs(r2Attrs, rel.getFds());
 
-        node.getChildren().add(decomposeToTree(new Relation(r1Attrs, r1Fds), idPrefix + "1"));
-        node.getChildren().add(decomposeToTree(new Relation(r2Attrs, r2Fds), idPrefix + "2"));
+        node.getChildren().add(decompose(new Relation(r1Attrs, r1Fds), id + "1"));
+        node.getChildren().add(decompose(new Relation(r2Attrs, r2Fds), id + "2"));
 
         return node;
     }

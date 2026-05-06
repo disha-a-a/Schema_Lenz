@@ -1,0 +1,69 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] -----------------< com.schemalenz:schema-lenz-backend >-----------------
+[INFO] Building SchemaLenz Backend 1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.1.2:run (default-cli) > test-compile @ schema-lenz-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ schema-lenz-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ schema-lenz-backend ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ schema-lenz-backend ---
+[INFO] skip non existing resourceDirectory C:\projects\Schema_Lenz\backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ schema-lenz-backend ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] <<< spring-boot:3.1.2:run (default-cli) < test-compile @ schema-lenz-backend <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.1.2:run (default-cli) @ schema-lenz-backend ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.1.2)
+
+2026-05-07T00:57:48.806+05:30  INFO 5296 --- [           main] com.schemalenz.SchemaLenzApplication     : Starting SchemaLenzApplication using Java 21.0.8 with PID 5296 (C:\projects\Schema_Lenz\backend\target\classes started by Disha in C:\projects\Schema_Lenz\backend)
+2026-05-07T00:57:48.807+05:30  INFO 5296 --- [           main] com.schemalenz.SchemaLenzApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-05-07T00:57:49.225+05:30  INFO 5296 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-07T00:57:49.274+05:30  INFO 5296 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 43 ms. Found 3 JPA repository interfaces.
+2026-05-07T00:57:49.640+05:30  INFO 5296 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2026-05-07T00:57:49.647+05:30  INFO 5296 --- [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-07T00:57:49.648+05:30  INFO 5296 --- [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.11]
+2026-05-07T00:57:49.721+05:30  INFO 5296 --- [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-07T00:57:49.723+05:30  INFO 5296 --- [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 881 ms
+2026-05-07T00:57:49.749+05:30  INFO 5296 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-07T00:57:49.897+05:30  INFO 5296 --- [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:schemalenz user=SA
+2026-05-07T00:57:49.899+05:30  INFO 5296 --- [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-07T00:57:49.909+05:30  INFO 5296 --- [           main] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:h2:mem:schemalenz'
+2026-05-07T00:57:50.025+05:30  INFO 5296 --- [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-07T00:57:50.067+05:30  INFO 5296 --- [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.2.6.Final
+2026-05-07T00:57:50.069+05:30  INFO 5296 --- [           main] org.hibernate.cfg.Environment            : HHH000406: Using bytecode reflection optimizer
+2026-05-07T00:57:50.181+05:30  INFO 5296 --- [           main] o.h.b.i.BytecodeProviderInitiator        : HHH000021: Bytecode provider name : bytebuddy
+2026-05-07T00:57:50.291+05:30  INFO 5296 --- [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-07T00:57:50.496+05:30  INFO 5296 --- [           main] o.h.b.i.BytecodeProviderInitiator        : HHH000021: Bytecode provider name : bytebuddy
+2026-05-07T00:57:50.983+05:30  INFO 5296 --- [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2026-05-07T00:57:51.031+05:30  INFO 5296 --- [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-07T00:57:51.227+05:30  WARN 5296 --- [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-07T00:57:51.447+05:30  INFO 5296 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2026-05-07T00:57:51.453+05:30  INFO 5296 --- [           main] com.schemalenz.SchemaLenzApplication     : Started SchemaLenzApplication in 2.915 seconds (process running for 3.18)
+2026-05-07T00:58:29.813+05:30  INFO 5296 --- [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-07T00:58:29.813+05:30  INFO 5296 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-07T00:58:29.815+05:30  INFO 5296 --- [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2NF relations count: 2
+  3NF relations for [emp_name, dept_manager, dept_name, dept_id, emp_id]: 2
+    BCNF subtree for 3NF node: Leaf
+    BCNF subtree for 3NF node: Leaf
+  3NF relations for [hours, project_id, project_name, emp_id]: 1
+    BCNF subtree for 3NF node: Leaf

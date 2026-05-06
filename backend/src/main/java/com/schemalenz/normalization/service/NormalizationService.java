@@ -8,8 +8,11 @@ import com.schemalenz.normalization.model.FunctionalDependency;
 import com.schemalenz.normalization.model.Relation;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 @Service
 public class NormalizationService {
@@ -23,24 +26,37 @@ public class NormalizationService {
         String currentNF = checker.detectNormalForm(attrs, fds, keys);
 
         DecompositionTreeNode rootNode = null;
-        List<Relation> decomposed;
-        if (targetNF.toUpperCase().equals("BCNF")) {
-            BCNFDecomposer decomposer = new BCNFDecomposer(closureCalc, checker);
-            decomposed = decomposer.decompose(new Relation(attrs, fds));
-            rootNode = decomposer.decomposeToTree(new Relation(attrs, fds), "R");
-        } else if (targetNF.toUpperCase().equals("3NF")) {
-            ThreeNFSynthesizer synthesizer = new ThreeNFSynthesizer(minCoverCalc, closureCalc);
-            decomposed = synthesizer.synthesize(attrs, fds);
-            rootNode = synthesizer.synthesizeToTree(attrs, fds);
-        } else {
-            decomposed = List.of(new Relation(attrs, fds));
-            rootNode = new DecompositionTreeNode("R0", attrs);
+        List<Relation> decomposed = new ArrayList<>();
+        
+        MasterDecomposer master = new MasterDecomposer(minCoverCalc, closureCalc, checker);
+        rootNode = master.buildFullPipelineTree(attrs, fds, targetNF);
+        
+        // Collect leaves for the final relation list
+        Stack<DecompositionTreeNode> stack = new Stack<>();
+        stack.push(rootNode);
+        while (!stack.isEmpty()) {
+            DecompositionTreeNode node = stack.pop();
+            if (node.getChildren().isEmpty()) {
+                decomposed.add(new Relation(node.getAttributes(), projectFDs(node.getAttributes(), fds)));
+            } else {
+                stack.addAll(node.getChildren());
+            }
         }
 
-        return new DecompositionResult(currentNF, keys, decomposed, attrs, fds, rootNode);
+        return new DecompositionResult(currentNF, targetNF, keys, decomposed, attrs, fds, rootNode);
     }
 
     public List<ClosureStep> calculateClosureAnimationSteps(Set<String> attributes, Set<FunctionalDependency> fds) {
         return closureCalc.calculateAnimationSteps(attributes, fds);
+    }
+
+    private Set<FunctionalDependency> projectFDs(Set<String> attrs, Set<FunctionalDependency> fds) {
+        Set<FunctionalDependency> projected = new HashSet<>();
+        for (FunctionalDependency fd : fds) {
+            if (attrs.containsAll(fd.getLhs()) && attrs.containsAll(fd.getRhs())) {
+                projected.add(fd);
+            }
+        }
+        return projected;
     }
 }

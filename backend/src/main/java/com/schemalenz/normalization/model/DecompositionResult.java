@@ -5,22 +5,16 @@ import java.util.Set;
 
 public class DecompositionResult {
     private final String currentNF;
+    private final String targetNF;
     private final List<Set<String>> candidateKeys;
     private final List<Relation> decomposedRelations;
     private final Set<String> attributes;
     private final Set<FunctionalDependency> fds;
     private DecompositionTreeNode decompositionTree;
 
-    public DecompositionResult(String currentNF, List<Set<String>> candidateKeys, List<Relation> decomposedRelations, Set<String> attributes, Set<FunctionalDependency> fds) {
+    public DecompositionResult(String currentNF, String targetNF, List<Set<String>> candidateKeys, List<Relation> decomposedRelations, Set<String> attributes, Set<FunctionalDependency> fds, DecompositionTreeNode decompositionTree) {
         this.currentNF = currentNF;
-        this.candidateKeys = candidateKeys;
-        this.decomposedRelations = decomposedRelations;
-        this.attributes = attributes;
-        this.fds = fds;
-    }
-
-    public DecompositionResult(String currentNF, List<Set<String>> candidateKeys, List<Relation> decomposedRelations, Set<String> attributes, Set<FunctionalDependency> fds, DecompositionTreeNode decompositionTree) {
-        this.currentNF = currentNF;
+        this.targetNF = targetNF;
         this.candidateKeys = candidateKeys;
         this.decomposedRelations = decomposedRelations;
         this.attributes = attributes;
@@ -30,6 +24,10 @@ public class DecompositionResult {
 
     public String getCurrentNF() {
         return currentNF;
+    }
+
+    public String getTargetNF() {
+        return targetNF;
     }
 
     public List<Set<String>> getCandidateKeys() {

@@ -11,9 +11,12 @@ import IndexBuilder from "./components/index/IndexBuilder";
 import BPlusTreeRenderer from "./components/index/BPlusTreeRenderer";
 import WorkspaceDashboard from "./components/workspace/WorkspaceDashboard";
 import DecompositionTree from "./components/normalization/DecompositionTree";
+import FlatFileViewer from "./components/normalization/FlatFileViewer";
+import DecomposedSchemaPage from "./components/normalization/DecomposedSchemaPage";
 import * as SocialDB from "./data/socialDB";
 import * as UniversityDB from "./data/universityDB";
-import { Database, Table as TableIcon, Layers, Zap } from "lucide-react";
+import * as EmployeeDB from "./data/employeeDB";
+import { Database, Table as TableIcon, Layers, Zap, FileText, CheckCircle } from "lucide-react";
 
 const DATABASES = {
   "Social Media": [
@@ -29,23 +32,30 @@ const DATABASES = {
     { name: "Students", data: UniversityDB.Students },
     { name: "Courses", data: UniversityDB.Courses },
     { name: "Enrollments", data: UniversityDB.Enrollments },
+    { name: "University_Universal_Flat_File", data: UniversityDB.University_Universal_Flat_File },
+  ],
+  "Employee": [
+    { name: "Employee_Universal_Flat_File", data: EmployeeDB.Employee_Universal_Flat_File },
   ]
 };
 
 const TABS = [
-  { id: "relations", label: "Relations" },
-  { id: "normalize", label: "Explorer" },
+  { id: "flat_file", label: "Flat File" },
+  { id: "normalize", label: "Normalization" },
+  { id: "final_schema", label: "Relations" },
   { id: "query",     label: "Refactor" },
   { id: "index",     label: "Verify"   },
   { id: "workspaces",label: "Docs"     },
 ];
 
 const FILE_TAB = {
-  relations:  { icon: "account_tree", name: "social_network.db",          tag: "SCHEMA"  },
-  normalize:  { icon: "data_object",  name: "normalization_config.json", tag: "EDITING" },
-  query:      { icon: "database",     name: "query_analysis.sql",        tag: "SQL"     },
-  index:      { icon: "account_tree", name: "index_builder.config",      tag: "CONFIG"  },
-  workspaces: { icon: "folder",       name: "workspaces.json",           tag: "READ"    },
+  relations:    { icon: "account_tree", name: "social_network.db",          tag: "SCHEMA"  },
+  flat_file:    { icon: "table_chart",  name: "social_flat_file.csv",      tag: "RAW"     },
+  normalize:    { icon: "data_object",  name: "normalization_config.json", tag: "EDITING" },
+  final_schema: { icon: "inventory",    name: "normalized_schema.json",    tag: "OUTPUT"  },
+  query:        { icon: "database",     name: "query_analysis.sql",        tag: "SQL"     },
+  index:        { icon: "account_tree", name: "index_builder.config",      tag: "CONFIG"  },
+  workspaces:   { icon: "folder",       name: "workspaces.json",           tag: "READ"    },
 };
 
 export default function App() {
@@ -53,11 +63,11 @@ export default function App() {
   const [queryPlan,      setQueryPlan]      = useState(null);
   const [indexTree,      setIndexTree]      = useState(null);
   const [activePlanNode, setActivePlanNode] = useState(null);
-  const [tab,            setTab]            = useState("relations");
+  const [tab,            setTab]            = useState("flat_file");
   const [workspace,      setWorkspace]      = useState(null);
   const [currentDB,      setCurrentDB]      = useState("Social Media");
   const [demoPhase,      setDemoPhase]      = useState("browse"); 
-  const [targetNF,       setTargetNF]       = useState("3NF");
+  const [targetNF,       setTargetNF]       = useState("BCNF");
   const [activeTable,    setActiveTable]    = useState(null); 
   // Utility for button actions
   // Playback control state
@@ -101,6 +111,15 @@ export default function App() {
   const [sideItem,       setSideItem]       = useState("Files");
   const [panelHeight,    setPanelHeight]    = useState(300);
   const [isResizing,     setIsResizing]     = useState(false);
+  const [showVisualizer, setShowVisualizer] = useState(false);
+
+  useEffect(() => {
+    const handleExecute = () => {
+      setShowVisualizer(true);
+    };
+    document.addEventListener("sl-execute", handleExecute);
+    return () => document.removeEventListener("sl-execute", handleExecute);
+  }, []);
 
   const startResizing = () => setIsResizing(true);
   const stopResizing  = () => setIsResizing(false);
@@ -301,33 +320,7 @@ export default function App() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-              {tab === "normalize" && (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontSize: "10px", color: "#849495", fontFamily: "Space Grotesk", letterSpacing: "0.08em", textTransform: "uppercase" }}>targetNF:</span>
-                  <select value={targetNF} onChange={e => setTargetNF(e.target.value)} style={{
-                    background: "#2a292f", border: "1px solid #3a494a", color: "#63f7ff",
-                    fontSize: "11px", fontFamily: "Fira Code, monospace", padding: "2px 8px",
-                    outline: "none", cursor: "pointer",
-                  }}>
-                    <option>1NF</option>
-                    <option>2NF</option>
-                    <option>3NF</option>
-                    <option>BCNF</option>
-                  </select>
-                </div>
-              )}
-              <button
-                onClick={() => document.dispatchEvent(new CustomEvent("sl-execute"))}
-                style={{
-                  background: "#3f0019", color: "#ffb1c3", border: "1px solid #ff4b89",
-                  padding: "4px 16px", cursor: "pointer",
-                  fontFamily: "Space Grotesk", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em",
-                  textTransform: "uppercase", transition: "all 0.15s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#ff4b89"; e.currentTarget.style.color = "#3f0019"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#3f0019"; e.currentTarget.style.color = "#ffb1c3"; }}>
-                EXECUTE NORMALIZATION
-              </button>
+              {/* Top right area can be used for other actions later */}
             </div>
           </div>
 
@@ -375,49 +368,26 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* ── STEP 2: RELATION SELECTION ── */}
+                {/* ── STEP 2: FD CONFIGURATION ── */}
                 <div style={{ marginBottom: "32px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#849495", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>
-                    <TableIcon size={14} />
-                    Step 2: Select Relation
+                    <Zap size={14} />
+                    Step 2: Define Dependencies
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                    {DATABASES[currentDB].map(tbl => (
-                      <button 
-                        key={tbl.name}
-                        onClick={() => {
-                          setActiveTable(tbl);
-                          setDemoPhase("fd-input");
-                        }}
-                        style={{
-                          padding: "8px 16px", borderRadius: "8px", border: "1px solid",
-                          fontFamily: "Space Grotesk", fontSize: "12px", fontWeight: 600, cursor: "pointer",
-                          transition: "all 0.15s",
-                          background: activeTable?.name === tbl.name ? "#2a292f" : "transparent",
-                          color: activeTable?.name === tbl.name ? "#63f7ff" : "#b9caca",
-                          borderColor: activeTable?.name === tbl.name ? "#63f7ff" : "#3a494a",
-                        }}
-                      >
-                        {tbl.name}
-                      </button>
-                    ))}
-                  </div>
+                  <FDInputPanel 
+                    onResult={setNormResult} 
+                    availableAttributes={(() => {
+                      const db = DATABASES[currentDB];
+                      const flatFile = db.find(t => t.name.includes("Universal"));
+                      return flatFile ? Object.keys(flatFile.data[0] || {}) : [];
+                    })()}
+                    currentSchemaName={(() => {
+                      const db = DATABASES[currentDB];
+                      const flatFile = db.find(t => t.name.includes("Universal"));
+                      return flatFile?.name;
+                    })()}
+                  />
                 </div>
-
-                {/* ── STEP 3: FD CONFIGURATION ── */}
-                {activeTable && (
-                  <div style={{ marginBottom: "32px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#849495", fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px" }}>
-                      <Zap size={14} />
-                      Step 3: Define Dependencies
-                    </div>
-                    <FDInputPanel 
-                      onResult={setNormResult} 
-                      availableAttributes={activeTable ? Object.keys(activeTable.data[0] || {}) : []}
-                      targetNF={targetNF}
-                    />
-                  </div>
-                )}
               </div>
             )}
 
@@ -440,6 +410,12 @@ export default function App() {
                   </div>
                 )}
               </div>
+            )}
+            {tab === "flat_file" && (
+              <FlatFileViewer />
+            )}
+            {tab === "final_schema" && (
+              <DecomposedSchemaPage result={normResult} />
             )}
             {tab === "workspaces" && (
               <div style={{ padding: "24px", height: "100%", overflowY: "auto" }}>
@@ -507,6 +483,20 @@ export default function App() {
                     <div style={{ flex: 1 }}>
                       <p style={{ color: "#63f7ff" }}>&gt; Normalization Step: {stepIndex}</p>
                       <DecompositionTree result={normResult} stepIndex={stepIndex} isPlaying={isPlaying} />
+                      {normResult && (
+                        <button 
+                          onClick={() => setTab("final_schema")}
+                          style={{
+                            marginTop: "16px", background: "#8fdb00", color: "#003739",
+                            border: "none", padding: "8px 16px", borderRadius: "4px",
+                            fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700,
+                            cursor: "pointer", display: "flex", alignItems: "center", gap: "8px"
+                          }}
+                        >
+                          <CheckCircle size={14} />
+                          VIEW DECOMPOSED SCHEMA
+                        </button>
+                      )}
                     </div>
                     <div style={{ width: "300px", borderLeft: "1px solid #3a494a", paddingLeft: "24px" }}>
                       <p style={{ color: "#00dce5", fontFamily: "Space Grotesk", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Closure Analysis</p>
@@ -523,6 +513,42 @@ export default function App() {
 
 
       </div>
+
+      {/* ── VISUALIZATION MODAL ── */}
+      {showVisualizer && normResult && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          zIndex: 9999, background: "rgba(13, 13, 18, 0.95)", backdropFilter: "blur(20px)",
+          display: "flex", flexDirection: "column", padding: "40px", animation: "fadeIn 0.3s ease"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+            <div>
+              <h2 style={{ fontFamily: "Space Grotesk", fontSize: "28px", fontWeight: 700, color: "#63f7ff", margin: 0 }}>
+                Normalization Decomposition Flow
+              </h2>
+              <p style={{ color: "#849495", fontSize: "14px", marginTop: "4px" }}>
+                Recursive tree view of relation decomposition from 1NF to {targetNF}
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowVisualizer(false)}
+              style={{
+                background: "rgba(255, 75, 137, 0.1)", color: "#ff4b89", border: "1px solid #ff4b89",
+                padding: "10px 24px", borderRadius: "12px", cursor: "pointer",
+                fontFamily: "Space Grotesk", fontWeight: 700, fontSize: "14px", transition: "all 0.2s"
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = "#ff4b89"; e.currentTarget.style.color = "#fff"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 75, 137, 0.1)"; e.currentTarget.style.color = "#ff4b89"; }}
+            >
+              CLOSE VISUALIZER
+            </button>
+          </div>
+          
+          <div style={{ flex: 1, position: "relative", borderRadius: "24px", overflow: "hidden", border: "1px solid rgba(99, 247, 255, 0.2)" }}>
+            <DecompositionTree result={normResult} fullScreen={true} />
+          </div>
+        </div>
+      )}
 
       {/* ── STATUS BAR ── */}
       <footer style={{

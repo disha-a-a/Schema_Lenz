@@ -9,10 +9,12 @@ import java.util.stream.Collectors;
 public class ThreeNFSynthesizer {
     private final MinimalCoverCalculator minCoverCalc;
     private final ClosureCalculator closureCalc;
+    private final NormalFormChecker checker;
 
     public ThreeNFSynthesizer(MinimalCoverCalculator minCoverCalc, ClosureCalculator closureCalc) {
         this.minCoverCalc = minCoverCalc;
         this.closureCalc = closureCalc;
+        this.checker = new NormalFormChecker(closureCalc);
     }
 
     public List<Relation> synthesize(Set<String> allAttrs, Set<FunctionalDependency> fds) {
@@ -56,10 +58,22 @@ public class ThreeNFSynthesizer {
 
     public DecompositionTreeNode synthesizeToTree(Set<String> allAttrs, Set<FunctionalDependency> fds) {
         DecompositionTreeNode root = new DecompositionTreeNode("R0", allAttrs);
+        
+        CandidateKeyFinder keyFinder = new CandidateKeyFinder(closureCalc);
+        List<Set<String>> rootKeys = keyFinder.findCandidateKeys(allAttrs, fds);
+        root.setCandidateKeys(rootKeys);
+        root.setNormalForm(checker.detectNormalForm(allAttrs, fds, rootKeys));
+        
         List<Relation> relations = synthesize(allAttrs, fds);
         int i = 1;
         for (Relation rel : relations) {
-            root.getChildren().add(new DecompositionTreeNode("R" + i++, rel.getAttributes()));
+            DecompositionTreeNode child = new DecompositionTreeNode("R" + i++, rel.getAttributes());
+            List<Set<String>> childKeys = keyFinder.findCandidateKeys(rel.getAttributes(), rel.getFds());
+            child.setCandidateKeys(childKeys);
+            child.setNormalForm(checker.detectNormalForm(rel.getAttributes(), rel.getFds(), childKeys));
+            child.setNfStage("3NF");
+            child.setReason("Transitive Dependency");
+            root.getChildren().add(child);
         }
         return root;
     }
