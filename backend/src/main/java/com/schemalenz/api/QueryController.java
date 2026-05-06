@@ -18,16 +18,16 @@ public class QueryController {
     @PostMapping("/explain")
     public PlanNode explain(@RequestBody QueryRequest request) throws Exception {
         PlanNode plan = sqlParser.parse(request.getSql());
-        optimizerService.annotateRelationalAlgebra(plan);
+        optimizerService.annotateRelationalAlgebra(plan, request.getTableStats());
         return plan;
     }
 
     @PostMapping("/optimize")
     public OptimizationResponse optimize(@RequestBody QueryRequest request) throws Exception {
         PlanNode original = sqlParser.parse(request.getSql());
-        optimizerService.annotateRelationalAlgebra(original);
+        optimizerService.annotateRelationalAlgebra(original, request.getTableStats());
         
-        PlanNode optimized = optimizerService.optimizePlan(original);
+        PlanNode optimized = optimizerService.optimizePlan(original, request.getTableStats());
         
         OptimizationResponse response = new OptimizationResponse();
         response.setOriginalPlan(original);
@@ -51,6 +51,7 @@ public class QueryController {
     @Data
     public static class QueryRequest {
         private String sql;
+        private java.util.Map<String, Double> tableStats;
     }
     
     @Data

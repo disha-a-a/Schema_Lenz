@@ -19,20 +19,39 @@ public class SQLParser {
     }
 
     private PlanNode buildPlan(PlainSelect select) {
-        // Bottom-up construction
-        
-        // 1. Scan Table
-        String tableName = select.getFromItem().toString();
-        PlanNode root = new ScanNode(tableName);
+        // 1. Base table (Scan)
+        String baseTableName = select.getFromItem().toString();
+        PlanNode root = new ScanNode(baseTableName);
 
-        // 2. Selection (WHERE clause)
+        // 2. Handle Joins (Left-deep tree construction)
+        if (select.getJoins() != null) {
+            for (Join join : select.getJoins()) {
+                String rightTableName = join.getRightItem().toString();
+                PlanNode rightScan = new ScanNode(rightTableName);
+                
+                // Try to get the JOIN condition (e.g. ON a.id = b.id)
+                String joinCond = "INNER";
+                if (join.getOnExpressions() != null && !join.getOnExpressions().isEmpty()) {
+                    joinCond = join.getOnExpressions().iterator().next().toString();
+                } else if (join.getUsingColumns() != null && !join.getUsingColumns().isEmpty()) {
+                    joinCond = "USING " + join.getUsingColumns().toString();
+                }
+                
+                JoinNode joinNode = new JoinNode(joinCond);
+                joinNode.addChild(root);      // Left child (previous subtree)
+                joinNode.addChild(rightScan); // Right child (new table)
+                root = joinNode;
+            }
+        }
+
+        // 3. Selection (WHERE clause) - applied on top of the joins for original plan
         if (select.getWhere() != null) {
             SelectNode selectNode = new SelectNode(select.getWhere().toString());
             selectNode.addChild(root);
             root = selectNode;
         }
 
-        // 3. Projection (SELECT clause)
+        // 4. Projection (SELECT clause)
         List<String> columns = select.getSelectItems().stream()
                 .map(Object::toString)
                 .collect(Collectors.toList());

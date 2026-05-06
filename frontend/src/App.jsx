@@ -7,6 +7,8 @@ import OptimizationDiff from "./components/query/OptimizationDiff";
 import FDArrowOverlay from "./components/normalization/FDArrowOverlay";
 import DemoControls from "./components/normalization/DemoControls.jsx";
 import ExecutionHighlighter from "./components/query/ExecutionHighlighter";
+import QueryPlanTree from "./components/query/QueryPlanTree";
+import ScanStrategySimulator from "./components/query/ScanStrategySimulator";
 import IndexBuilder from "./components/index/IndexBuilder";
 import BPlusTreeRenderer from "./components/index/BPlusTreeRenderer";
 import WorkspaceDashboard from "./components/workspace/WorkspaceDashboard";
@@ -43,7 +45,7 @@ const TABS = [
   { id: "flat_file", label: "Flat File" },
   { id: "normalize", label: "Normalization" },
   { id: "final_schema", label: "Relations" },
-  { id: "query",     label: "Refactor" },
+  { id: "query",     label: "Query" },
   { id: "index",     label: "Verify"   },
   { id: "workspaces",label: "Docs"     },
 ];
@@ -107,6 +109,11 @@ export default function App() {
     }
     return () => clearInterval(timer);
   }, [isPlaying]);
+
+  useEffect(() => {
+    setQueryPlan(null);
+  }, [currentDB]);
+
 
   const [sideItem,       setSideItem]       = useState("Files");
   const [panelHeight,    setPanelHeight]    = useState(300);
@@ -393,8 +400,67 @@ export default function App() {
 
             {tab === "query" && (
               <div style={{ padding: "24px", height: "100%", overflowY: "auto" }}>
-                <QueryBuilder onPlan={setQueryPlan} />
-                {queryPlan && <div style={{ marginTop: "24px" }}><ExecutionHighlighter activeNode={activePlanNode} planData={queryPlan} /></div>}
+                <QueryBuilder 
+                  onPlan={setQueryPlan} 
+                  currentDB={currentDB}
+                  databases={DATABASES}
+                  baseRowCount={(() => {
+                    const db = DATABASES[currentDB];
+                    const flatFile = db.find(t => t.name.includes("Universal"));
+                    return flatFile && flatFile.data ? flatFile.data.length : 10;
+                  })()}
+                />
+                {queryPlan && (
+                  <div style={{ marginTop: "32px" }}>
+                    <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap" }}>
+                      {[
+                        { symbol: "σ", label: "Select",  color: "#ffb4ab" },
+                        { symbol: "π", label: "Project", color: "#63f7ff" },
+                        { symbol: "⋈", label: "Join",    color: "#c792ea" },
+                        { symbol: "⊛", label: "Table",   color: "#8fdb00" },
+                        { symbol: "τ", label: "Sort",    color: "#ffcb6b" },
+                        { symbol: "γ", label: "Group",   color: "#ffcb6b" },
+                      ].map(l => (
+                        <div key={l.label} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ fontSize: "16px", color: l.color, fontWeight: 900 }}>{l.symbol}</span>
+                          <span style={{ fontSize: "11px", color: "#849495", fontFamily: "Space Grotesk", fontWeight: 700 }}>{l.label}</span>
+                        </div>
+                      ))}
+                      <span style={{ marginLeft: "auto", fontSize: "11px", color: "#849495", fontStyle: "italic", fontFamily: "Space Grotesk" }}>Click any node for details →</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+                      <div>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px", fontFamily: "Space Grotesk" }}>Original Plan (Unoptimized)</div>
+                        <QueryPlanTree planData={queryPlan.original} label="Original AST" />
+                      </div>
+                      <div style={{ position: "relative" }}>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#8fdb00", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "10px", fontFamily: "Space Grotesk", display: "flex", alignItems: "center", gap: "8px" }}>
+                          Optimized Plan <span style={{ background: "#8fdb00", color: "#003739", padding: "2px 8px", borderRadius: "4px", fontSize: "9px" }}>HEURISTIC APPLIED</span>
+                        </div>
+                        <QueryPlanTree planData={queryPlan.optimized} label="Optimized Plan" />
+                      </div>
+                    </div>
+                    {queryPlan.cost && (
+                      <div style={{ marginTop: "20px", padding: "16px 24px", background: "#1b1b20", border: "1px solid #3a494a", borderRadius: "12px", display: "flex", gap: "40px", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: "10px", color: "#849495", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px", fontFamily: "Space Grotesk" }}>Nested Loop Cost</div>
+                          <div style={{ fontSize: "20px", fontFamily: "Fira Code, monospace", color: "#ffb4ab", fontWeight: 700 }}>{queryPlan.cost.nestedLoopCost?.toLocaleString()} ops</div>
+                        </div>
+                        <div style={{ fontSize: "24px", color: "#3a494a" }}>→</div>
+                        <div>
+                          <div style={{ fontSize: "10px", color: "#849495", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px", fontFamily: "Space Grotesk" }}>Hash Join Cost</div>
+                          <div style={{ fontSize: "20px", fontFamily: "Fira Code, monospace", color: "#8fdb00", fontWeight: 700 }}>{queryPlan.cost.hashJoinCost?.toLocaleString()} ops</div>
+                        </div>
+                        <div style={{ marginLeft: "auto", padding: "8px 20px", background: "rgba(143,219,0,0.1)", border: "1px solid #8fdb00", borderRadius: "8px" }}>
+                          <div style={{ fontSize: "10px", color: "#849495", fontWeight: 700, textTransform: "uppercase", marginBottom: "2px", fontFamily: "Space Grotesk" }}>Recommendation</div>
+                          <div style={{ fontSize: "13px", color: "#8fdb00", fontWeight: 700, fontFamily: "Space Grotesk" }}>{queryPlan.cost.recommendation}</div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Scan Strategy Simulator */}
+                    <ScanStrategySimulator currentDB={currentDB} />
+                  </div>
+                )}
               </div>
             )}
             {tab === "index" && (

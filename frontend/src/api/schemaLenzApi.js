@@ -13,8 +13,8 @@ export const calculateClosureSteps = async (attrs, fds) => {
 export const analyzeQuery = (sql, workspaceId) =>
   api.post('/query/explain', { sql, workspaceId });
 
-export const optimizeQuery = (sql, workspaceId) =>
-  api.post('/query/optimize', { sql, workspaceId });
+export const optimizeQuery = (sql, tableStats, workspaceId) =>
+  api.post('/query/optimize', { sql, tableStats, workspaceId });
 
 export const simulateCost = (leftRows, rightRows) =>
   api.post('/query/cost', { leftRows, rightRows });

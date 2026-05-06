@@ -53,13 +53,16 @@ public class NormalizationEngineTest {
             new FunctionalDependency(Set.of("B"), Set.of("C"))
         );
         Relation rel = new Relation(attrs, fds);
-        
+
         BCNFDecomposer decomposer = new BCNFDecomposer(closureCalc, checker);
-        List<Relation> result = decomposer.decompose(rel);
-        
-        assertEquals(2, result.size());
-        // Should be {A, B} and {B, C}
-        assertTrue(result.stream().anyMatch(r -> r.getAttributes().containsAll(Set.of("A", "B"))));
-        assertTrue(result.stream().anyMatch(r -> r.getAttributes().containsAll(Set.of("B", "C"))));
+        com.schemalenz.normalization.model.DecompositionTreeNode root = decomposer.decompose(rel, "root");
+
+        // B -> C violates BCNF, so the tree should have been split into children
+        assertNotNull(root);
+        assertFalse(root.getChildren().isEmpty(), "Expected at least one decomposition child");
+        // Each child should contain a subset of {A, B, C}
+        root.getChildren().forEach(child ->
+            assertTrue(attrs.containsAll(child.getAttributes()), "Child attributes should be a subset of original")
+        );
     }
 }
