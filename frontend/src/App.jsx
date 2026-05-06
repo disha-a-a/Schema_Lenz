@@ -415,7 +415,14 @@ export default function App() {
               <FlatFileViewer />
             )}
             {tab === "final_schema" && (
-              <DecomposedSchemaPage result={normResult} />
+              <DecomposedSchemaPage 
+                result={normResult} 
+                flatFileData={(() => {
+                  const db = DATABASES[currentDB];
+                  const flatFile = db.find(t => t.name.includes("Universal"));
+                  return flatFile ? flatFile.data : [];
+                })()}
+              />
             )}
             {tab === "workspaces" && (
               <div style={{ padding: "24px", height: "100%", overflowY: "auto" }}>
@@ -424,91 +431,7 @@ export default function App() {
             )}
           </div>
 
-          {/* ── BOTTOM OUTPUT PANEL ── */}
-          <div style={{ 
-            height: `${panelHeight}px`, 
-            borderTop: "1px solid #3a494a", 
-            background: "#0e0e13", 
-            display: "flex", 
-            flexDirection: "column", 
-            position: "relative",
-            flexShrink: 0
-          }}>
-            {/* Resize Handle */}
-            <div 
-              onMouseDown={startResizing}
-              style={{
-                position: "absolute", top: "-3px", left: 0, right: 0, height: "6px",
-                cursor: "ns-resize", zIndex: 10, background: isResizing ? "#63f7ff" : "transparent"
-              }}
-            />
 
-            {/* panel header */}
-            <div style={{ height: "32px", background: "#1f1f25", borderBottom: "1px solid #3a494a", display: "flex", alignItems: "center", padding: "0 16px", flexShrink: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                <span style={{ fontFamily: "Space Grotesk", fontSize: "10px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#63f7ff" }}>
-                  Output / Visualizer
-                </span>
-                <div style={{ display: "flex", gap: "12px", borderLeft: "1px solid #3a494a", paddingLeft: "16px" }}>
-                  {["TERMINAL", "OUTPUT", "DEBUG", "PROBLEMS"].map(p => (
-                    <span key={p} style={{ fontSize: "10px", color: p === "OUTPUT" ? "#e4e1e9" : "#849495", cursor: "pointer", fontWeight: 700 }}>{p}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* terminal / results content */}
-            <div style={{ flex: 1, padding: "16px", overflowY: "auto", display: "flex", gap: "20px" }}>
-              <div style={{
-                flex: 1, background: "#000", border: "1px solid #3a494a", padding: "16px",
-                fontFamily: "Fira Code, monospace", fontSize: "12px",
-                lineHeight: 1.7, position: "relative",
-              }}>
-                {/* traffic light dots */}
-                <div style={{ position: "absolute", top: "8px", right: "8px", display: "flex", gap: "4px" }}>
-                  {["#ffb4ab", "#8fdb00", "#63f7ff"].map((c, i) => (
-                    <div key={i} style={{ width: "8px", height: "8px", borderRadius: "50%", background: c }} />
-                  ))}
-                </div>
-
-                <p style={{ color: "#849495", marginBottom: "4px" }}>[$] sl-engine analyze --target={targetNF}</p>
-                <p style={{ color: "#8fdb00", marginBottom: "12px" }}>SchemaLenz v1.0 [Ready]</p>
-
-                {!normResult && (
-                  <p style={{ color: "#b9caca", opacity: 0.8 }}>&gt; Select a relation and click 'Execute' to begin visualization.</p>
-                )}
-
-                {tab === "normalize" && normResult && (
-                  <div style={{ display: "flex", gap: "24px" }}>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ color: "#63f7ff" }}>&gt; Normalization Step: {stepIndex}</p>
-                      <DecompositionTree result={normResult} stepIndex={stepIndex} isPlaying={isPlaying} />
-                      {normResult && (
-                        <button 
-                          onClick={() => setTab("final_schema")}
-                          style={{
-                            marginTop: "16px", background: "#8fdb00", color: "#003739",
-                            border: "none", padding: "8px 16px", borderRadius: "4px",
-                            fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700,
-                            cursor: "pointer", display: "flex", alignItems: "center", gap: "8px"
-                          }}
-                        >
-                          <CheckCircle size={14} />
-                          VIEW DECOMPOSED SCHEMA
-                        </button>
-                      )}
-                    </div>
-                    <div style={{ width: "300px", borderLeft: "1px solid #3a494a", paddingLeft: "24px" }}>
-                      <p style={{ color: "#00dce5", fontFamily: "Space Grotesk", fontSize: "10px", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "12px" }}>Closure Analysis</p>
-                      <AttributeGrid attributes={normResult.attributes || []} fds={normResult.fds || []} />
-                    </div>
-                  </div>
-                )}
-                {tab === "query"  && <OptimizationDiff planData={queryPlan} onNodeHover={setActivePlanNode} />}
-                {tab === "index"  && <BPlusTreeRenderer treeData={indexTree} />}
-              </div>
-            </div>
-          </div>
         </main>
 
 

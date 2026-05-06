@@ -67,3 +67,15 @@
     BCNF subtree for 3NF node: Leaf
   3NF relations for [hours, project_id, project_name, emp_id]: 1
     BCNF subtree for 3NF node: Leaf
+2NF relations count: 3
+  3NF relations for [post_id, user_id, name, content, email]: 2
+  3NF relations for [post_id, tag_id, likes]: 1
+  3NF relations for [c_created_at, p_created_at, post_id, city, tag_name, c_text, tag_id, comment_id]: 1
+2NF relations count: 3
+  3NF relations for [post_id, user_id, name, content, email]: 2
+  3NF relations for [post_id, tag_id, likes]: 1
+  3NF relations for [c_created_at, p_created_at, post_id, city, tag_name, c_text, tag_id, comment_id]: 1
+2NF relations count: 3
+  3NF relations for [post_id, user_id, name, content, email]: 2
+  3NF relations for [post_id, tag_id, likes]: 1
+  3NF relations for [c_created_at, p_created_at, post_id, city, tag_name, c_text, tag_id, comment_id]: 1
