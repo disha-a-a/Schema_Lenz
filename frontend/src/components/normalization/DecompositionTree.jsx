@@ -22,25 +22,40 @@ function DecompositionTreeInner({ result, fullScreen }) {
   const { fitView } = useReactFlow();
 
   // BFS the tree to build the flat node/edge arrays
-  const { allNodes, allEdges, steps } = useMemo(() => {
+    const { allNodes, allEdges, steps } = useMemo(() => {
     if (!result?.decompositionTree) return { allNodes: [], allEdges: [], steps: [] };
 
     const nodes = [];
     const edges = [];
-    const queue = [{ node: result.decompositionTree, level: 0, parentId: null }];
-    const levelCounts = {};
+    const NODE_WIDTH = 450;
+    const NODE_HEIGHT = 320; // Increased padding for clarity
 
-    while (queue.length > 0) {
-      const { node, level, parentId } = queue.shift();
-      const indexInLevel = levelCounts[level] || 0;
-      levelCounts[level] = indexInLevel + 1;
+    // 1. Compute subtree height for each node (recursive)
+    // This allows us to allocate enough vertical space for each branch
+    const computeSubtreeHeight = (node) => {
+      if (!node.children || node.children.length === 0) {
+        node._subtreeHeight = NODE_HEIGHT;
+        return NODE_HEIGHT;
+      }
+      let totalHeight = 0;
+      node.children.forEach(child => {
+        totalHeight += computeSubtreeHeight(child);
+      });
+      node._subtreeHeight = Math.max(NODE_HEIGHT, totalHeight);
+      return node._subtreeHeight;
+    };
 
-      const nodeId = node.id || `n-${Math.random()}`;
-      
+    // 2. Assign positions using the precomputed subtree heights
+    const assignPositions = (node, level, startY, parentId) => {
+      const nodeId = node.id || `n-${Math.random().toString(36).substr(2, 9)}`;
+      const x = level * NODE_WIDTH;
+      // Position this node in the center of its own vertical allocation
+      const y = startY + (node._subtreeHeight / 2) - (NODE_HEIGHT / 2);
+
       nodes.push({
         id: nodeId,
         type: "relationNode",
-        position: { x: level * 450, y: indexInLevel * 280 },
+        position: { x, y },
         data: { 
           ...node, 
           level, 
@@ -56,29 +71,25 @@ function DecompositionTreeInner({ result, fullScreen }) {
           target: nodeId,
           type: "smoothstep",
           animated: false,
-          style: { opacity: 0, stroke: LEVEL_COLORS[level % 4], strokeWidth: 3, transition: "opacity 0.4s ease" },
-          markerEnd: { type: MarkerType.ArrowClosed, color: LEVEL_COLORS[level % 4] }
+          style: { opacity: 0, stroke: LEVEL_COLORS[level % 4] || "#63f7ff", strokeWidth: 3, transition: "opacity 0.4s ease" },
+          markerEnd: { type: MarkerType.ArrowClosed, color: LEVEL_COLORS[level % 4] || "#63f7ff" }
         });
       }
 
       if (node.children) {
+        let currentY = startY;
         node.children.forEach(child => {
-          queue.push({ node: child, level: level + 1, parentId: nodeId });
+          assignPositions(child, level + 1, currentY, nodeId);
+          currentY += child._subtreeHeight;
         });
       }
-    }
+    };
 
-    // Center the levels vertically
-    const maxNodesInLevel = Math.max(...Object.values(levelCounts));
-    const canvasHeight = maxNodesInLevel * 280;
-    nodes.forEach(n => {
-      const count = levelCounts[n.data.level];
-      const levelHeight = count * 280;
-      const offset = (canvasHeight - levelHeight) / 2;
-      n.position.y += offset;
-    });
+    // Run the layout
+    computeSubtreeHeight(result.decompositionTree);
+    assignPositions(result.decompositionTree, 0, 0, null);
 
-    // Build steps
+    // Build steps for animation
     const stepList = [];
     const byLevel = {};
     nodes.forEach(n => {
@@ -87,19 +98,15 @@ function DecompositionTreeInner({ result, fullScreen }) {
 
     Object.keys(byLevel).sort().forEach(lvl => {
       const levelInt = parseInt(lvl);
-      
       if (levelInt === 0) {
         stepList.push({ type: "SHOW_NODES", ids: byLevel[lvl] });
         stepList.push({ type: "PAUSE", ms: 800 });
       } else {
-        // Step: Show edges first to imply left-to-right flow
         const inEdges = edges.filter(e => byLevel[lvl].includes(e.target)).map(e => e.id);
         if (inEdges.length) {
           stepList.push({ type: "SHOW_EDGES", ids: inEdges });
           stepList.push({ type: "PAUSE", ms: 400 });
         }
-        
-        // Step: Show the nodes at this level
         stepList.push({ type: "SHOW_NODES", ids: byLevel[lvl] });
         stepList.push({ type: "PAUSE", ms: 800 });
       }
@@ -189,8 +196,13 @@ function DecompositionTreeInner({ result, fullScreen }) {
         </button>
 
         <button 
-          onClick={() => setStepIdx(prev => Math.max(0, prev - 1))}
-          style={{ background: "#2a292f", border: "none", color: "#849495", padding: "8px", borderRadius: "6px", cursor: "pointer" }}
+          onClick={() => {
+            setIsPlaying(false);
+            setStepIdx(prev => Math.max(0, prev - 1));
+          }}
+          disabled={stepIdx <= 0}
+          title="Previous Step"
+          style={{ background: "#2a292f", border: "none", color: stepIdx <= 0 ? "#444" : "#849495", padding: "8px", borderRadius: "6px", cursor: stepIdx <= 0 ? "not-allowed" : "pointer" }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>chevron_left</span>
         </button>
@@ -203,8 +215,13 @@ function DecompositionTreeInner({ result, fullScreen }) {
         </button>
 
         <button 
-          onClick={() => setStepIdx(prev => Math.min(steps.length, prev + 1))}
-          style={{ background: "#2a292f", border: "none", color: "#849495", padding: "8px", borderRadius: "6px", cursor: "pointer" }}
+          onClick={() => {
+            setIsPlaying(false);
+            setStepIdx(prev => Math.min(steps.length, prev + 1));
+          }}
+          disabled={stepIdx >= steps.length}
+          title="Next Step"
+          style={{ background: "#2a292f", border: "none", color: stepIdx >= steps.length ? "#444" : "#849495", padding: "8px", borderRadius: "6px", cursor: stepIdx >= steps.length ? "not-allowed" : "pointer" }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>chevron_right</span>
         </button>
