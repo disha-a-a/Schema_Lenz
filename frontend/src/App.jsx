@@ -42,12 +42,11 @@ const DATABASES = {
 };
 
 const TABS = [
-  { id: "flat_file", label: "Flat File" },
-  { id: "normalize", label: "Normalization" },
-  { id: "final_schema", label: "Relations" },
-  { id: "query",     label: "Query" },
-  { id: "index",     label: "Verify"   },
-  { id: "workspaces",label: "Docs"     },
+  { id: "flat_file",     label: "Raw Input" },
+  { id: "normalize",     label: "Decompose" },
+  { id: "final_schema",  label: "Architecture" },
+  { id: "query",         label: "Query Engine" },
+  { id: "index",         label: "B+ Tree" },
 ];
 
 const FILE_TAB = {
@@ -114,8 +113,7 @@ export default function App() {
     setQueryPlan(null);
   }, [currentDB]);
 
-
-  const [sideItem,       setSideItem]       = useState("Files");
+  const [sidebarOpen,    setSidebarOpen]    = useState(true);
   const [panelHeight,    setPanelHeight]    = useState(300);
   const [isResizing,     setIsResizing]     = useState(false);
   const [showVisualizer, setShowVisualizer] = useState(false);
@@ -215,97 +213,193 @@ export default function App() {
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
 
-        {/* ── LEFT SIDEBAR ── */}
+        {/* ── LEFT SIDEBAR — context-aware, collapsible ── */}
         <aside style={{
-          width: "240px", flexShrink: 0, background: "#1b1b20",
+          width: sidebarOpen ? "240px" : "46px", flexShrink: 0, background: "#1b1b20",
           borderRight: "1px solid #3a494a", display: "flex", flexDirection: "column",
-          padding: "12px 0",
+          transition: "width 0.2s ease", overflow: "hidden",
         }}>
-          <div style={{ padding: "0 16px 24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <span style={{ fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", color: "#e9feff", textTransform: "uppercase" }}>
-                Project_Alpha
+          {/* Toggle button */}
+          <div style={{ padding: sidebarOpen ? "12px 16px" : "12px 8px", borderBottom: "1px solid #3a494a", display: "flex", alignItems: "center", justifyContent: sidebarOpen ? "space-between" : "center" }}>
+            {sidebarOpen && (
+              <span style={{ fontFamily: "Space Grotesk", fontSize: "10px", fontWeight: 700, letterSpacing: "0.12em", color: "#63f7ff", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                {tab === "flat_file" ? "Tables" : tab === "normalize" ? "Analysis" : tab === "final_schema" ? "Schema" : tab === "query" ? "Tables" : tab === "index" ? "Index Info" : "Context"}
               </span>
-              <span style={{ fontSize: "10px", color: "#849495", opacity: 0.7 }}>v1.0-stable</span>
-            </div>
+            )}
             <button
-              onClick={() => handleButtonClick('NEW_SCHEMA')}
-              style={{
-                width: "100%", background: "#ff4b89", color: "#590026",
-                border: "none", padding: "8px", cursor: "pointer",
-                fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
-                textTransform: "uppercase", transition: "filter 0.15s",
-              }} onMouseEnter={e => e.target.style.filter = "brightness(1.15)"}
-                onMouseLeave={e => e.target.style.filter = "brightness(1)"}>
-              NEW_SCHEMA
+              onClick={() => setSidebarOpen(prev => !prev)}
+              style={{ background: "none", border: "none", cursor: "pointer", color: "#849495", padding: "2px", display: "flex", alignItems: "center" }}
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>{sidebarOpen ? "chevron_left" : "chevron_right"}</span>
             </button>
           </div>
 
-          <nav style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "2px" }}>
-            {[
-              { id: "Files",     icon: "folder",       children: [
-                  { icon: "description",  name: "schema_v1.sql",               active: false },
-                  { icon: "data_object",  name: "normalization_config.json",   active: tab === "normalize" },
-                ]},
-              { id: "Relations", icon: "account_tree" },
-              { id: "SQL",       icon: "database"     },
-              { id: "History",   icon: "history"      },
-              { id: "Logs",      icon: "terminal"     },
-            ].map(item => (
-              <div key={item.id} style={{ padding: "0 8px" }}>
-                <div onClick={() => { 
-                  setSideItem(item.id); 
-                  if (item.id === "Files") setTab("normalize"); 
-                  if (item.id === "Relations") setTab("relations");
-                  handleButtonClick(item.id);
-                }}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px", padding: "8px 12px",
-                    cursor: "pointer", transition: "all 0.15s",
-                    color: sideItem === item.id ? "#ff4b89" : "#b9caca",
-                    borderLeft: sideItem === item.id ? "2px solid #ff4b89" : "2px solid transparent",
-                    background: sideItem === item.id ? "#2a292f" : "transparent",
-                    opacity: sideItem === item.id ? 1 : 0.7,
-                    fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                  }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>{item.icon}</span>
-                  {item.id}
-                </div>
-                {item.children && sideItem === "Files" && (
-                  <div style={{ paddingLeft: "28px", marginTop: "4px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                    {item.children.map(f => (
-                      <div key={f.name} style={{
-                        display: "flex", alignItems: "center", gap: "8px", padding: "4px 8px",
-                        cursor: "pointer", fontSize: "12px",
-                        color: f.active ? "#63f7ff" : "#b9caca",
-                        background: f.active ? "#35343a" : "transparent",
-                        opacity: f.active ? 1 : 0.7,
-                        transition: "all 0.15s",
-                      }}>
-                        <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>{f.icon}</span>
-                        {f.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </nav>
+          {/* Context content — only rendered when expanded */}
+          {sidebarOpen && (
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 0" }}>
 
-          <div style={{ borderTop: "1px solid #3a494a", paddingTop: "12px" }}>
-            {[{ icon: "settings", label: "Settings" }, { icon: "help", label: "Support" }].map(item => (
-              <div key={item.label} style={{
-                display: "flex", alignItems: "center", gap: "8px", padding: "8px 20px",
-                cursor: "pointer", color: "#849495", opacity: 0.7, fontSize: "11px",
-                fontFamily: "Space Grotesk", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
-                transition: "all 0.15s",
-              }} onMouseEnter={e => { e.currentTarget.style.background = "#35343a"; e.currentTarget.style.opacity = 1; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.opacity = 0.7; }}>
-                <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>{item.icon}</span>
-                {item.label}
-              </div>
-            ))}
-          </div>
+              {/* ── RAW INPUT tab: list tables in current DB ── */}
+              {tab === "flat_file" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  {Object.entries(DATABASES).map(([dbName, tables]) => (
+                    <div key={dbName}>
+                      <div style={{ padding: "6px 16px", fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "Space Grotesk" }}>{dbName}</div>
+                      {tables.map(t => (
+                        <div
+                          key={t.name}
+                          onClick={() => { setCurrentDB(dbName); setActiveTable(t); }}
+                          style={{
+                            display: "flex", alignItems: "center", gap: "8px", padding: "6px 16px",
+                            cursor: "pointer", transition: "all 0.15s",
+                            color: activeTable?.name === t.name && currentDB === dbName ? "#63f7ff" : "#b9caca",
+                            background: activeTable?.name === t.name && currentDB === dbName ? "rgba(99,247,255,0.08)" : "transparent",
+                            borderLeft: activeTable?.name === t.name && currentDB === dbName ? "2px solid #63f7ff" : "2px solid transparent",
+                            fontSize: "12px", fontFamily: "Fira Code, monospace",
+                          }}
+                          onMouseEnter={e => { if (!(activeTable?.name === t.name && currentDB === dbName)) e.currentTarget.style.background = "#2a292f"; }}
+                          onMouseLeave={e => { if (!(activeTable?.name === t.name && currentDB === dbName)) e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>table_chart</span>
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── DECOMPOSE tab: NF detection + candidate keys ── */}
+              {tab === "normalize" && (
+                <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {normResult ? (
+                    <>
+                      <div>
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", fontFamily: "Space Grotesk" }}>Detected Normal Form</div>
+                        <div style={{ padding: "10px 14px", background: "#131318", border: "1px solid #3a494a", borderRadius: "8px", display: "flex", alignItems: "center", gap: "10px" }}>
+                          <span style={{ fontSize: "20px", fontWeight: 900, fontFamily: "Fira Code, monospace", color: normResult.currentNF === "BCNF" ? "#8fdb00" : normResult.currentNF === "3NF" ? "#63f7ff" : "#ffb4ab" }}>{normResult.currentNF || "—"}</span>
+                          <span style={{ fontSize: "10px", color: "#849495" }}>current</span>
+                        </div>
+                      </div>
+                      {normResult.candidateKeys && normResult.candidateKeys.length > 0 && (
+                        <div>
+                          <div style={{ fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", fontFamily: "Space Grotesk" }}>Candidate Keys</div>
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                            {normResult.candidateKeys.map((ck, i) => (
+                              <div key={i} style={{ padding: "6px 10px", background: "#131318", border: "1px solid #3a494a", borderRadius: "6px", fontSize: "11px", fontFamily: "Fira Code, monospace", color: "#c792ea" }}>
+                                {Array.isArray(ck) ? `{${ck.join(", ")}}` : `{${ck}}`}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {normResult.decomposedRelations && (
+                        <div>
+                          <div style={{ fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", fontFamily: "Space Grotesk" }}>Decomposed</div>
+                          <div style={{ fontSize: "22px", fontWeight: 900, fontFamily: "Fira Code, monospace", color: "#8fdb00" }}>{normResult.decomposedRelations.length} <span style={{ fontSize: "11px", color: "#849495", fontWeight: 600 }}>relations</span></div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ color: "#849495", fontSize: "12px", fontFamily: "Space Grotesk", opacity: 0.6, padding: "8px 0" }}>Run normalization to see analysis results here.</div>
+                  )}
+                </div>
+              )}
+
+              {/* ── ARCHITECTURE tab: decomposed relations list ── */}
+              {tab === "final_schema" && (
+                <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {normResult?.decomposedRelations ? (
+                    normResult.decomposedRelations.map((rel, i) => (
+                      <div key={i} style={{ padding: "8px 12px", background: "#131318", border: "1px solid #3a494a", borderRadius: "8px" }}>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: "#63f7ff", fontFamily: "Space Grotesk", marginBottom: "4px" }}>R{i + 1}</div>
+                        <div style={{ fontSize: "11px", fontFamily: "Fira Code, monospace", color: "#b9caca", wordBreak: "break-all" }}>
+                          {Array.isArray(rel.attributes) ? rel.attributes.join(", ") : (rel.attributes ? Object.keys(rel.attributes).join(", ") : "—")}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ color: "#849495", fontSize: "12px", fontFamily: "Space Grotesk", opacity: 0.6, padding: "8px 0" }}>Decompose a schema first to see relations here.</div>
+                  )}
+                </div>
+              )}
+
+              {/* ── QUERY ENGINE tab: available tables for joins ── */}
+              {tab === "query" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                  <div style={{ padding: "6px 16px", fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", fontFamily: "Space Grotesk" }}>{currentDB} Tables</div>
+                  {DATABASES[currentDB]?.map(t => (
+                    <div
+                      key={t.name}
+                      style={{
+                        display: "flex", alignItems: "center", gap: "8px", padding: "6px 16px",
+                        cursor: "pointer", transition: "all 0.15s",
+                        color: "#b9caca", fontSize: "12px", fontFamily: "Fira Code, monospace",
+                        borderLeft: "2px solid transparent",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "#2a292f"; e.currentTarget.style.color = "#63f7ff"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#b9caca"; }}
+                      title={`Click to copy: ${t.name}`}
+                      onClick={() => navigator.clipboard.writeText(t.name)}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: "14px" }}>table_chart</span>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</span>
+                      <span style={{ marginLeft: "auto", fontSize: "10px", opacity: 0.5 }}>{t.data?.length || 0}r</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* ── B+ TREE tab: index statistics ── */}
+              {tab === "index" && (
+                <div style={{ padding: "0 16px", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {indexTree ? (
+                    <>
+                      <div>
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", fontFamily: "Space Grotesk" }}>Tree Height</div>
+                        <div style={{ fontSize: "28px", fontWeight: 900, fontFamily: "Fira Code, monospace", color: "#63f7ff" }}>{indexTree.height}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", fontFamily: "Space Grotesk" }}>Total Nodes</div>
+                        <div style={{ fontSize: "28px", fontWeight: 900, fontFamily: "Fira Code, monospace", color: "#c792ea" }}>{indexTree.totalNodes}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", fontFamily: "Space Grotesk" }}>Status</div>
+                        <div style={{ padding: "6px 10px", background: "rgba(143,219,0,0.08)", border: "1px solid rgba(143,219,0,0.3)", borderRadius: "6px", fontSize: "11px", color: "#8fdb00", fontWeight: 700, fontFamily: "Space Grotesk", display: "inline-block" }}>BALANCED</div>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ color: "#849495", fontSize: "12px", fontFamily: "Space Grotesk", opacity: 0.6, padding: "8px 0" }}>Build a B+ tree to see index stats here.</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Collapsed icon strip */}
+          {!sidebarOpen && (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", paddingTop: "8px" }}>
+              {TABS.map(t => (
+                <div
+                  key={t.id}
+                  onClick={() => { setTab(t.id); setSidebarOpen(true); }}
+                  title={t.label}
+                  style={{
+                    width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", borderRadius: "6px", transition: "all 0.15s",
+                    color: tab === t.id ? "#63f7ff" : "#849495",
+                    background: tab === t.id ? "rgba(99,247,255,0.08)" : "transparent",
+                  }}
+                  onMouseEnter={e => { if (tab !== t.id) e.currentTarget.style.background = "#2a292f"; }}
+                  onMouseLeave={e => { if (tab !== t.id) e.currentTarget.style.background = tab === t.id ? "rgba(99,247,255,0.08)" : "transparent"; }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>
+                    {t.id === "flat_file" ? "table_chart" : t.id === "normalize" ? "data_object" : t.id === "final_schema" ? "inventory" : t.id === "query" ? "database" : "account_tree"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </aside>
 
         {/* ── CENTER EDITOR ── */}
@@ -464,17 +558,54 @@ export default function App() {
               </div>
             )}
             {tab === "index" && (
-              <div style={{ padding: "24px", height: "100%", overflowY: "auto" }}>
-                <IndexBuilder onTreeGenerated={setIndexTree} />
-                {indexTree && (
-                  <div style={{ marginTop: "24px", padding: "16px", background: "#0e0e13", border: "1px solid #3a494a" }}>
-                    <h5 style={{ color: "#63f7ff", fontFamily: "Space Grotesk", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "8px" }}>Tree Statistics</h5>
-                    <div style={{ display: "flex", gap: "32px", fontFamily: "Fira Code, monospace", fontSize: "13px", color: "#e4e1e9" }}>
-                      <span>Height: {indexTree.height}</span>
-                      <span>Total Nodes: {indexTree.totalNodes}</span>
+              <div style={{ display: "flex", height: "100%", overflow: "hidden" }}>
+                {/* ── LEFT: Controls Sidebar ── */}
+                <div style={{ 
+                  width: "320px", flexShrink: 0, overflowY: "auto", 
+                  borderRight: "1px solid #3a494a", padding: "20px",
+                  display: "flex", flexDirection: "column", gap: "20px"
+                }}>
+                  <IndexBuilder onTreeGenerated={setIndexTree} />
+                  
+                  {indexTree && (
+                    <div style={{ padding: "16px", background: "#1b1b20", border: "1px solid #3a494a", borderRadius: "12px" }}>
+                      <div style={{ fontSize: "11px", fontWeight: 700, color: "#63f7ff", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "12px", fontFamily: "Space Grotesk" }}>Index Statistics</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontFamily: "Space Grotesk" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontSize: "10px", color: "#849495", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px" }}>Tree Height</div>
+                            <div style={{ fontSize: "24px", fontFamily: "Fira Code, monospace", color: "#e4e1e9", fontWeight: 700 }}>{indexTree.height}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: "10px", color: "#849495", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px" }}>Total Nodes</div>
+                            <div style={{ fontSize: "24px", fontFamily: "Fira Code, monospace", color: "#e4e1e9", fontWeight: 700 }}>{indexTree.totalNodes}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: "11px", color: "#849495", background: "#131318", padding: "6px 12px", borderRadius: "6px", border: "1px solid #3a494a", fontWeight: 600 }}>
+                            Status: <span style={{ color: "#8fdb00" }}>STABLE</span>
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                {/* ── RIGHT: Tree Visualization ── */}
+                <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
+                  {indexTree ? (
+                    <BPlusTreeRenderer treeData={indexTree} />
+                  ) : (
+                    <div style={{ 
+                      height: "100%", display: "flex", alignItems: "center", justifyContent: "center", 
+                      flexDirection: "column", gap: "16px", color: "#849495" 
+                    }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: "48px", opacity: 0.3 }}>account_tree</span>
+                      <div style={{ fontFamily: "Space Grotesk", fontSize: "14px", fontWeight: 600 }}>No tree generated yet</div>
+                      <div style={{ fontFamily: "Space Grotesk", fontSize: "12px", opacity: 0.6 }}>Enter values and click BUILD ALL or STEP INSERT</div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             {tab === "flat_file" && (

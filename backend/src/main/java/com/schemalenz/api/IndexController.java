@@ -24,6 +24,12 @@ public class IndexController {
         return treeBuilder.buildTree(request.getValues(), order);
     }
 
+    @PostMapping("/build-steps")
+    public List<BPlusTreeBuilder.BTreeResult> buildIndexSteps(@RequestBody BuildRequest request) {
+        int order = request.getOrder() > 2 ? request.getOrder() : 3;
+        return treeBuilder.buildTreeSteps(request.getValues(), order);
+    }
+
     @PostMapping("/analyze")
     public IndexCostAnalyzer.CostAnalysisResult analyzeCost(@RequestBody IndexCostAnalyzer.CostAnalysisRequest request) {
         return costAnalyzer.analyzeCost(request);
