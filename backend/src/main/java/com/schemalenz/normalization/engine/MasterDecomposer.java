@@ -26,7 +26,7 @@ public class MasterDecomposer {
     public DecompositionTreeNode buildFullPipelineTree(Set<String> attrs, Set<FunctionalDependency> fds, String targetNF) {
         String target = targetNF.toUpperCase();
         CandidateKeyFinder keyFinder = new CandidateKeyFinder(closureCalc);
-        
+
         // Root: 1NF
         DecompositionTreeNode root = new DecompositionTreeNode("ROOT", attrs);
         List<Set<String>> rootKeys = keyFinder.findCandidateKeys(attrs, fds);
@@ -50,8 +50,22 @@ public class MasterDecomposer {
 
             if (target.equals("2NF")) continue;
 
-            // Step 2: 3NF Synthesis for each 2NF relation
-            List<Relation> relations3NF = synthesizer3NF.synthesize(r2.getAttributes(), r2.getFds());
+            // Step 2: 3NF Synthesis — run ONCE on the full original relation's attrs+fds,
+            // not on the 2NF fragment. This ensures the minimal cover is derived from
+            // the complete FD set and cross-split implied dependencies are not lost.
+            //
+            // We then filter the global 3NF result to only those relations whose attributes
+            // are a subset of this 2NF fragment, so the tree hierarchy remains coherent.
+            List<Relation> allRelations3NF = synthesizer3NF.synthesize(attrs, fds);
+            List<Relation> relations3NF = allRelations3NF.stream()
+                .filter(r3 -> r2.getAttributes().containsAll(r3.getAttributes()))
+                .collect(java.util.stream.Collectors.toList());
+
+            // If none matched (e.g. the 2NF fragment is already 3NF), treat it directly
+            if (relations3NF.isEmpty()) {
+                relations3NF = List.of(r2);
+            }
+
             for (Relation r3 : relations3NF) {
                 DecompositionTreeNode node3NF = createNode(r3, "R3_");
                 node3NF.setNormalForm(checker.detectNormalForm(r3.getAttributes(), r3.getFds(), node3NF.getCandidateKeys()));
@@ -63,12 +77,9 @@ public class MasterDecomposer {
 
                 // Step 3: BCNF Decomposition for each 3NF relation
                 DecompositionTreeNode bcnfSubtree = decomposerBCNF.decompose(r3, "RB_");
-                // If it actually decomposed (has children), add the children to 3NF node
-                // If not, it might just be the same relation, but we want the BCNF stage label
                 if (!bcnfSubtree.getChildren().isEmpty()) {
                     node3NF.getChildren().addAll(bcnfSubtree.getChildren());
                 } else {
-                    // Just one leaf
                     bcnfSubtree.setNfStage("BCNF");
                     node3NF.getChildren().add(bcnfSubtree);
                 }

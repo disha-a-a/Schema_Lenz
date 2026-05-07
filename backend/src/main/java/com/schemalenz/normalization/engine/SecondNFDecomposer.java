@@ -86,9 +86,33 @@ public class SecondNFDecomposer {
         return node;
     }
 
+    /**
+     * Correct FD projection onto a target attribute set.
+     *
+     * For every non-empty subset X of {@code attrs}, compute X+ under {@code fds},
+     * intersect with {@code attrs}, and — if the result strictly contains X —
+     * emit X → (X+ ∩ attrs \ X).
+     */
     private Set<FunctionalDependency> projectFDs(Set<String> attrs, Set<FunctionalDependency> fds) {
-        return fds.stream()
-            .filter(fd -> attrs.containsAll(fd.getLhs()) && attrs.containsAll(fd.getRhs()))
-            .collect(Collectors.toSet());
+        List<String> attrList = new ArrayList<>(attrs);
+        int n = attrList.size();
+        Set<FunctionalDependency> projected = new HashSet<>();
+
+        for (int mask = 1; mask < (1 << n); mask++) {
+            Set<String> subset = new HashSet<>();
+            for (int i = 0; i < n; i++) {
+                if ((mask & (1 << i)) != 0) subset.add(attrList.get(i));
+            }
+
+            Set<String> closure = closureCalc.calculateClosure(subset, fds);
+            Set<String> rhs = new HashSet<>(closure);
+            rhs.retainAll(attrs);
+            rhs.removeAll(subset); // strip trivial
+
+            if (!rhs.isEmpty()) {
+                projected.add(new FunctionalDependency(new HashSet<>(subset), rhs));
+            }
+        }
+        return projected;
     }
 }

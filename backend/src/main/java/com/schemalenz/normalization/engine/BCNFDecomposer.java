@@ -5,6 +5,7 @@ import com.schemalenz.normalization.model.FunctionalDependency;
 import com.schemalenz.normalization.model.Relation;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class BCNFDecomposer {
     private final ClosureCalculator closureCalc;
@@ -50,10 +51,38 @@ public class BCNFDecomposer {
         return node;
     }
 
+    /**
+     * Correct FD projection onto a target attribute set.
+     *
+     * For every non-empty subset X of {@code attrs}, compute X+ under {@code fds},
+     * intersect with {@code attrs}, and — if that intersection strictly contains X —
+     * emit the FD  X → (X+ ∩ attrs \ X).
+     *
+     * This derives all FDs implied by the original set that hold within the
+     * projected relation, including those that cross the decomposition split.
+     */
     private Set<FunctionalDependency> projectFDs(Set<String> attrs, Set<FunctionalDependency> fds) {
-        // Simplified projection: keep FDs that are fully contained in the new attribute set
-        return fds.stream()
-            .filter(fd -> attrs.containsAll(fd.getLhs()) && attrs.containsAll(fd.getRhs()))
-            .collect(Collectors.toSet());
+        List<String> attrList = new ArrayList<>(attrs);
+        int n = attrList.size();
+        Set<FunctionalDependency> projected = new HashSet<>();
+
+        // Enumerate every non-empty proper subset of attrs as LHS candidate
+        for (int mask = 1; mask < (1 << n); mask++) {
+            Set<String> subset = new HashSet<>();
+            for (int i = 0; i < n; i++) {
+                if ((mask & (1 << i)) != 0) subset.add(attrList.get(i));
+            }
+
+            // Compute closure of subset under the original FDs, then restrict to attrs
+            Set<String> closure = closureCalc.calculateClosure(subset, fds);
+            Set<String> rhs = new HashSet<>(closure);
+            rhs.retainAll(attrs);
+            rhs.removeAll(subset); // remove trivial part
+
+            if (!rhs.isEmpty()) {
+                projected.add(new FunctionalDependency(new HashSet<>(subset), rhs));
+            }
+        }
+        return projected;
     }
 }
