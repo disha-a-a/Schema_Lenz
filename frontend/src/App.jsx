@@ -365,7 +365,7 @@ export default function App() {
                       </div>
                       <div>
                         <div style={{ fontSize: "10px", fontWeight: 700, color: "#849495", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px", fontFamily: "Space Grotesk" }}>Status</div>
-                        <div style={{ padding: "6px 10px", background: "rgba(143,219,0,0.08)", border: "1px solid rgba(143,219,0,0.3)", borderRadius: "6px", fontSize: "11px", color: "#8fdb00", fontWeight: 700, fontFamily: "Space Grotesk", display: "inline-block" }}>BALANCED</div>
+                        <div style={{ padding: "6px 10px", background: "rgba(143,219,0,0.08)", border: "1px solid rgba(143,219,0,0.3)", borderRadius: "6px", fontSize: "11px", color: "#8fdb00", fontWeight: 700, fontFamily: "Space Grotesk", display: "inline-block" }}>INSERT-BASED</div>
                       </div>
                     </>
                   ) : (
@@ -583,7 +583,7 @@ export default function App() {
                         </div>
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <span style={{ fontSize: "11px", color: "#849495", background: "#131318", padding: "6px 12px", borderRadius: "6px", border: "1px solid #3a494a", fontWeight: 600 }}>
-                            Status: <span style={{ color: "#8fdb00" }}>STABLE</span>
+                            Mode: <span style={{ color: "#63f7ff" }}>SIMULATED</span>
                           </span>
                         </div>
                       </div>
@@ -614,6 +614,7 @@ export default function App() {
             {tab === "final_schema" && (
               <DecomposedSchemaPage 
                 result={normResult} 
+                onViewTree={() => setShowVisualizer(true)}
                 flatFileData={(() => {
                   const db = DATABASES[currentDB];
                   const flatFile = db.find(t => t.name.includes("Universal"));

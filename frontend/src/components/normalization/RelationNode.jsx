@@ -21,18 +21,19 @@ export default function RelationNode({ data }) {
 
   return (
     <div style={{
-      width: "420px",
+      width: "320px",
+      minHeight: "120px",
       background: "#1b1b20",
       border: `1px solid rgba(255, 255, 255, 0.1)`,
-      borderLeft: `3px solid ${levelColor}`,
+      borderLeft: `4px solid ${levelColor}`,
       borderRadius: "12px",
       display: "flex",
       flexDirection: "column",
       overflow: "hidden",
       fontFamily: "Space Grotesk, sans-serif",
-      boxShadow: `0 10px 30px rgba(0,0,0,0.5)`,
+      boxShadow: `0 8px 32px rgba(0,0,0,0.5)`,
       position: "relative",
-      transition: "all 0.3s ease"
+      transition: "all 0.3s ease",
     }}>
       {/* Top Header */}
       <div style={{
@@ -41,34 +42,18 @@ export default function RelationNode({ data }) {
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
-        borderBottom: `1px solid ${levelColor}30`
+        borderBottom: `1px solid ${levelColor}20`
       }}>
-        <div style={{ fontWeight: 800, fontSize: "14px", color: levelColor, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          Relation {data.nfStage || "R"} {id.split('-').pop()}
+        <div style={{ fontWeight: 700, fontSize: "14px", color: levelColor, textTransform: "uppercase" }}>
+          Relation_{id.split('-').pop()}
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          <div style={{ background: levelColor, padding: "4px 10px", borderRadius: "6px", fontSize: "12px", fontWeight: 900, color: "#000" }}>
-            {data.nfStage || "1NF"}
-          </div>
+        <div style={{ background: levelColor, padding: "2px 8px", borderRadius: "4px", fontSize: "11px", fontWeight: 900, color: "#000" }}>
+          {data.nfStage || "1NF"}
         </div>
       </div>
 
       {/* Main Content */}
       <div style={{ padding: "12px", display: "flex", flexDirection: "column", gap: "10px" }}>
-        {/* Candidate Keys */}
-        {candidateKeys.length > 0 && (
-          <div style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "4px" }}>
-             <Key size={12} color={levelColor} />
-             <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
-               {candidateKeys.map((key, i) => (
-                 <span key={i} style={{ fontSize: "12px", color: levelColor, fontWeight: 700, fontFamily: "Fira Code" }}>
-                   ({key.join(", ")}){i < candidateKeys.length - 1 ? "," : ""}
-                 </span>
-               ))}
-             </div>
-          </div>
-        )}
-
         {/* Attribute Pills */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
           {attributes.map((attr, idx) => {
@@ -77,16 +62,15 @@ export default function RelationNode({ data }) {
             
             return (
               <span key={idx} style={{
-                background: determinant ? `${levelColor}22` : "rgba(255, 255, 255, 0.03)",
-                color: determinant ? levelColor : "#b9caca",
-                padding: "6px 10px",
+                background: determinant ? `${levelColor}20` : "rgba(255, 255, 255, 0.05)",
+                color: determinant ? levelColor : "#e4e1e9",
+                padding: "4px 8px",
                 borderRadius: "6px",
-                fontSize: "13px",
+                fontSize: "12px",
                 fontFamily: "Fira Code, monospace",
-                border: `1px solid ${determinant ? `${levelColor}55` : "rgba(255, 255, 255, 0.1)"}`,
+                border: `1px solid ${determinant ? levelColor : "rgba(255, 255, 255, 0.1)"}`,
                 fontWeight: determinant ? 700 : 400,
                 textDecoration: keyPart ? "underline" : "none",
-                transition: "all 0.2s"
               }}>
                 {attr}
               </span>
@@ -97,23 +81,23 @@ export default function RelationNode({ data }) {
         {/* Violation Info */}
         {violatingFD && (
           <div style={{ 
-            marginTop: "4px", 
-            padding: "10px", 
-            background: "rgba(255, 75, 137, 0.05)", 
-            borderRadius: "6px",
-            border: "1px solid rgba(255, 75, 137, 0.1)",
+            marginTop: "6px", 
+            padding: "12px", 
+            background: "rgba(255, 75, 137, 0.08)", 
+            borderRadius: "10px",
+            border: "1px solid rgba(255, 75, 137, 0.2)",
             display: "flex",
             flexDirection: "column",
-            gap: "6px"
+            gap: "8px"
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "#ff4b89", fontSize: "13px", fontWeight: 700 }}>
-              <AlertCircle size={16} />
-              <span>VIOLATES {reason}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#ff4b89", fontSize: "12px", fontWeight: 800, textTransform: "uppercase" }}>
+              <AlertCircle size={14} />
+              <span>{reason} VIOLATION DETECTED</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#e4e1e9", fontSize: "14px", fontFamily: "Fira Code" }}>
-              <span style={{ color: levelColor }}>{violatingFD.lhs.join(", ")}</span>
-              <ArrowRight size={12} color="#849495" />
-              <span style={{ color: "#ff4b89" }}>{violatingFD.rhs.join(", ")}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "#e4e1e9", fontSize: "14px", fontFamily: "Fira Code", background: "#0e0e13", padding: "8px", borderRadius: "6px" }}>
+              <span style={{ color: levelColor, fontWeight: 700 }}>{violatingFD.lhs.join(", ")}</span>
+              <ArrowRight size={14} color="#ff4b89" />
+              <span style={{ color: "#ff4b89", fontWeight: 700 }}>{violatingFD.rhs.join(", ")}</span>
             </div>
           </div>
         )}
@@ -124,13 +108,13 @@ export default function RelationNode({ data }) {
         <Handle 
           type="target" 
           position={Position.Left} 
-          style={{ background: levelColor, width: '12px', height: '12px', border: '3px solid #1b1b20', left: '-6px' }} 
+          style={{ background: levelColor, width: '10px', height: '10px', border: '2px solid #1b1b20', left: '-5px' }} 
         />
       )}
       <Handle 
         type="source" 
         position={Position.Right} 
-        style={{ background: levelColor, width: '12px', height: '12px', border: '3px solid #1b1b20', right: '-6px' }} 
+        style={{ background: levelColor, width: '10px', height: '10px', border: '2px solid #1b1b20', right: '-5px' }} 
       />
     </div>
   );
