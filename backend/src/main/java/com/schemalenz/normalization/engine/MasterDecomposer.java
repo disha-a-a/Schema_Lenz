@@ -41,30 +41,57 @@ public class MasterDecomposer {
 
         // Step 1: 2NF Decomposition
         List<Relation> relations2NF = decomposer2NF.decompose(rootRel);
+        // Build 2NF tree nodes and collect them in a map for 3NF assignment
+        Map<DecompositionTreeNode, Relation> nodeToRelation2NF = new LinkedHashMap<>();
         for (Relation r2 : relations2NF) {
             DecompositionTreeNode node2NF = createNode(r2, "R2_");
             node2NF.setNormalForm(checker.detectNormalForm(r2.getAttributes(), r2.getFds(), node2NF.getCandidateKeys()));
             node2NF.setNfStage("2NF");
             node2NF.setReason("partial dep");
             root.getChildren().add(node2NF);
+            nodeToRelation2NF.put(node2NF, r2);
+        }
 
-            if (target.equals("2NF")) continue;
+        if (target.equals("2NF")) return root;
 
-            // Step 2: 3NF Synthesis — run ONCE on the full original relation's attrs+fds,
-            // not on the 2NF fragment. This ensures the minimal cover is derived from
-            // the complete FD set and cross-split implied dependencies are not lost.
-            //
-            // We then filter the global 3NF result to only those relations whose attributes
-            // are a subset of this 2NF fragment, so the tree hierarchy remains coherent.
-            List<Relation> allRelations3NF = synthesizer3NF.synthesize(attrs, fds);
-            List<Relation> relations3NF = allRelations3NF.stream()
-                .filter(r3 -> r2.getAttributes().containsAll(r3.getAttributes()))
-                .collect(java.util.stream.Collectors.toList());
+        // Step 2: 3NF Synthesis — run ONCE on the full original relation's attrs+fds.
+        // This ensures the minimal cover is derived from the complete FD set and
+        // cross-split implied dependencies are not lost.
+        List<Relation> allRelations3NF = synthesizer3NF.synthesize(attrs, fds);
 
-            // If none matched (e.g. the 2NF fragment is already 3NF), treat it directly
-            if (relations3NF.isEmpty()) {
-                relations3NF = List.of(r2);
+        // Assign each 3NF relation to the 2NF parent with the largest attribute
+        // overlap. A 3NF relation may span attributes from multiple 2NF fragments
+        // (shared FK columns), so strict containsAll would silently drop it.
+        // Using intersection size ensures every 3NF relation finds a parent.
+        Map<DecompositionTreeNode, List<Relation>> assigned3NF = new LinkedHashMap<>();
+        for (DecompositionTreeNode n : nodeToRelation2NF.keySet()) {
+            assigned3NF.put(n, new ArrayList<>());
+        }
+
+        for (Relation r3 : allRelations3NF) {
+            DecompositionTreeNode bestParent = null;
+            int bestOverlap = -1;
+            for (Map.Entry<DecompositionTreeNode, Relation> entry : nodeToRelation2NF.entrySet()) {
+                Set<String> intersection = new HashSet<>(entry.getValue().getAttributes());
+                intersection.retainAll(r3.getAttributes());
+                if (intersection.size() > bestOverlap) {
+                    bestOverlap = intersection.size();
+                    bestParent = entry.getKey();
+                }
             }
+            if (bestParent != null && bestOverlap > 0) {
+                assigned3NF.get(bestParent).add(r3);
+            }
+        }
+
+        // Build 3NF children under their assigned 2NF parents
+        for (Map.Entry<DecompositionTreeNode, List<Relation>> entry : assigned3NF.entrySet()) {
+            DecompositionTreeNode node2NF = entry.getKey();
+            List<Relation> relations3NF = entry.getValue();
+
+            // If this 2NF fragment has no 3NF children assigned (already in 3NF itself),
+            // skip adding a redundant self-referential child
+            if (relations3NF.isEmpty()) continue;
 
             for (Relation r3 : relations3NF) {
                 DecompositionTreeNode node3NF = createNode(r3, "R3_");
